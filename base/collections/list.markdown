@@ -123,4 +123,4 @@ List实现使用的标记界面，表明它们支持快速（通常为恒定时�
 不像其他的抽象集合实现，程序员不必提供迭代器实现; 迭代器和列表迭代器由此类实现的，对的“随机访问”方法上： get(int) ， set(int, E) ， add(int, E)和remove(int) 。 
 我们可以通过继承这个类实现自己需要的List
     
-[AbstractCollection]:  base/collections/AbstractCollection.markdown "AbstractCollection抽象类"
+[AbstractCollection]:  https://github.com/TransientWang/KnowledgeBase/blob/master/base/collections/AbstractCollection.markdown "AbstractCollection抽象类"
