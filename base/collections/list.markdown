@@ -148,6 +148,9 @@ ConcurrentModificationExceptions 异常。如果一个实现不希望提供快�
 通过这两个类操作外部类的数据。
 
 
+## AbstractSequentialList ##
+
+该类不与之前介绍的两个类在同一层，但是它也是一个抽象类，并且是LinkedList的父类所以在本页来分析这个类
 
 
 
