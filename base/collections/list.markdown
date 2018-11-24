@@ -124,11 +124,28 @@ List实现使用的标记界面，表明它们支持快速（通常为恒定时�
 不像其他的抽象集合实现，程序员不必提供迭代器实现; 迭代器和列表迭代器由此类实现的，对的“随机访问”方法上： get(int) ， set(int, E) ， add(int, E)和remove(int) 。 
 我们可以通过继承这个类实现自己需要的List（源自官方文档）
     
+该类有一个字段`protected transient int modCount = 0;` 
+
+>代表这个list的结构已经被修改过的次数，结构修改是那些改变list的size属性，或者其他方式如迭代进度可能会产生不正确的结果
+>这个字段用在迭代器和列表迭代器实现中，如果此字段的值意外更改，则迭代器(list迭代器)，将在响应迭代器的next方法，remove方法，previous(),set(),add()等方法
+>抛出concurrentmodificationexception 异常，这提供了fast-fail 的行为，而不是在面对迭代过程中，并发修改的非确定性行为。<p>
+>子类们使用这个字段是可选的，如果一个子类希望提供快速失败的迭代器(lsit迭代器),那么 它仅仅需要增加这个字段在他的 add，remove，方法
+(或者其他任何修改了list结构的方法)一个单一的调用add()或者remove()方法，必须增加不超过1 的大小的值，给这个字段。否则，迭代器或者list迭代器将抛出
+ConcurrentModificationExceptions 异常。如果一个实现不希望提供快速失败迭代器，这个字段可以忽视。简单的说就是使用该字段让List确保只有被单一线程修改.
+
+
 该类实现了两个私有化子类` class Itr implements Iterator<E>`和`class ListItr extends Itr implements ListIterator<E>`
-，实现了AbstractCollection里的抽象方法`iterator()`返回 `new Itr()`
-，没有实现AbstractCollection类的`size()`方法
-，但是添加了一个抽象`get()`方法。所以子类必须要实现`get()`和`size()`方法。
+>Iterator 集合类的迭代器 Enumeration的替代者允许调用者在迭代期间使用明确定义的语义从底层集合中删除元素,并改进了方法名<p>
+>ListIterator 用于允许程序员沿任一方向遍历列表的列表的迭代器，在迭代期间修改列表，并获取列表中迭代器的当前位置。
+
+该类实现了AbstractCollection里的抽象方法`iterator()`返回 `new Itr()`,又添加了一个 `listIterator()`方法,返回 `new ListItr()`,
+还有一个抽象`get()`方法，没有实现AbstractCollection类的`size()`方法。所以子类必须要实现`get()`和`size()`方法。
 另外，如果子类想要能够修改元素，还需要重写 add(), set(), remove() 方法，否则直接抛出UnsupportedOperationException异常。
+
+ 
+该类添加了两个静态内部类`RandomAccessSubList`和`SubList` ，这两类是`subList()`方法根据实现的List是否实现了RandomAccess接口而返回的类,
+通过这两个类操作外部类的数据。
+
 
 
 
