@@ -122,6 +122,16 @@ List实现使用的标记界面，表明它们支持快速（通常为恒定时�
 
 
 不像其他的抽象集合实现，程序员不必提供迭代器实现; 迭代器和列表迭代器由此类实现的，对的“随机访问”方法上： get(int) ， set(int, E) ， add(int, E)和remove(int) 。 
-我们可以通过继承这个类实现自己需要的List
+我们可以通过继承这个类实现自己需要的List（源自官方文档）
     
+该类实现了两个私有化子类` class Itr implements Iterator<E>`和`class ListItr extends Itr implements ListIterator<E>`
+，实现了AbstractCollection里的抽象方法`iterator()`返回 `new Itr()`
+，没有实现AbstractCollection类的`size()`方法
+，但是添加了一个抽象`get()`方法。所以子类必须要实现`get()`和`size()`方法。
+另外，如果子类想要能够修改元素，还需要重写 add(), set(), remove() 方法，否则直接抛出UnsupportedOperationException异常。
+
+
+
+
+
 [AbstractCollection]:  https://github.com/TransientWang/KnowledgeBase/blob/master/base/collections/AbstractCollection.markdown "AbstractCollection抽象类"
