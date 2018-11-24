@@ -1,4 +1,5 @@
-##RandomAccess（标志接口）
+##RandomAccess（标志接口） ##
+
 List实现使用的标记界面，表明它们支持快速（通常为恒定时间）随机访问。 此接口的主要目的是允许通用算法更改其行为，以便在应用于随机访问列表或顺序访问列表时提供良好的性能。
 
 
@@ -109,7 +110,7 @@ List实现使用的标记界面，表明它们支持快速（通常为恒定时�
 而实现了随机访问接口的List比如ArrayList.get()(上面已经展示过)则会以恒定的时间获取到索引位置的值，所以更适合用for来迭代。
 
 
-##AbstractList
+##AbstractList ##
 
 如果想要了解此类，有必要先了解一下[AbstractCollection][AbstractCollection]类，该抽象类此类提供的骨干实现的List接口以
 最小化来实现该接口由一个“随机访问”数据存储备份所需的工作（如阵列）。 对于顺序存取的数据（如链接列表）， AbstractSequentialList应优先使用此类。 

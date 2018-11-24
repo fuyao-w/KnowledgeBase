@@ -1,4 +1,5 @@
-##AbstractCollection
+##AbstractCollection ##
+
 该类提供了Collection接口的骨架实现，以尽量减少实现此接口所需的工作量。
 该抽象类的方法都是基于迭代器实现的,为了实现一个不可修改的集合，程序员只需要扩展这个类并提供iterator和size方法的实现。 （ iterator方法返回的迭代器必须实现hasNext和next ） 
 要实现可修改的集合，程序员必须另外覆盖此类的add方法（否则将抛出UnsupportedOperationException ），并且由iterator方法返回的迭代器必须另外实现其remove方法。
