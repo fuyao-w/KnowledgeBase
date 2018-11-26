@@ -172,7 +172,7 @@ size方法的实现。对于不可修改的列表，程序员只需要实现列�
 
 `AbstractSequentialList`并没有实现`RandomaAccess`接口，设置数据的的实现是通过`listIterator`的迭代进行的，上面提到的其他三个方法也都是通过`listIterator`实现的。
 如果我们实现自己的List而且是通过链表这类的数据结构存储的话，我们应该去继承这个类实现保存数据的数据结构和`listIterator`的相应方法，来实现自己的List。
-当然上面已经提供好的方法也可以重写，就想`LinkedList`一样。
+当然上面已经提供好的方法也可以重写，就像`LinkedList`一样。
 
 
 
