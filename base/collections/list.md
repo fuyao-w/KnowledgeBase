@@ -124,7 +124,7 @@ List实现使用的标记界面，表明它们支持快速（通常为恒定时�
 不像其他的抽象集合实现，程序员不必提供迭代器实现; 迭代器和列表迭代器由此类实现的，对的“随机访问”方法上： get(int) ， set(int, E) ， add(int, E)和remove(int) 。 
 我们可以通过继承这个类实现自己需要的List（源自官方文档）
     
-该类有一个字段`protected transient int modCount = 0;` 
+该类有一个字段`protected transient int modCount = 0;` []()
 
 >代表这个list的结构已经被修改过的次数，结构修改是那些改变list的size属性，或者其他方式如迭代进度可能会产生不正确的结果
 >这个字段用在迭代器和列表迭代器实现中，如果此字段的值意外更改，则迭代器(list迭代器)，将在响应迭代器的next方法，remove方法，previous(),set(),add()等方法
@@ -150,7 +150,29 @@ ConcurrentModificationExceptions 异常。如果一个实现不希望提供快�
 
 ## AbstractSequentialList ##
 
-该类不与之前介绍的两个类在同一层，但是它也是一个抽象类，并且是LinkedList的父类所以在本页来分析这个类
+该类不与之前介绍的两个类在同一层，但是它也是一个抽象类，并且是LinkedList的父类，所以在本页来分析这个类
+
+此类提供List接口的骨干实现，以最大限度地减少实现由“顺序访问”的List（例如链表）支持的此接口所需的工作量。
+对于随机访问数据（例如数组），应优先使用AbstractList而不是此类。这个类与AbstractList类相反，
+它在List的listIterator上实现了可以“随机访问”的方法（get（int index），set（int index，E element），add（int index，E element）
+和remove（int index） ））要实现列表，程序员只需要扩展此类并提供listIterator和
+size方法的实现。对于不可修改的列表，程序员只需要实现列表迭代器的hasNext，next，hasPrevious，previous和index方法。
+对于可修改的列表，程序员还应该实现list迭代器的set方法。对于可变大小的列表，程序员还应该实现列表迭代器的remove和add方法。
+程序员通常应该根据Collection接口规范中的建议提供void（无参数）和集合构造函数。
+
+以上是`java doc`原话，下面分析一下这些话的意义，以`get()`方法为例子：
+
+     public E get(int index) {
+            try {
+                return listIterator(index).next();
+            } catch (NoSuchElementException exc) {
+                throw new IndexOutOfBoundsException("Index: "+index);
+            }
+        }
+
+`AbstractSequentialList`并没有实现`RandomaAccess`接口，设置数据的的实现是通过`listIterator`的迭代进行的，上面提到的其他三个方法也都是通过`listIterator`实现的。
+如果我们实现自己的List而且是通过链表这类的数据结构存储的话，我们应该去继承这个类实现保存数据的数据结构和`listIterator`的相应方法，来实现自己的List。
+当然上面已经提供好的方法也可以重写，就想`LinkedList`一样。
 
 
 
