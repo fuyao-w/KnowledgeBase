@@ -229,45 +229,6 @@ size，isEmpty，get，set，iterator和listIterator操作以恒定时间运行�
 如果只开启10个线程。有可能不会抛出异常。这是modeCount的第二个作用：**在多线程条件下可能的不确定行为时，保证迭代器的fast-fail。**
 
 
-#### 注意 ####
-看下面一段程序会发生什么：
-
-    public void test() {
-        ArrayList<Integer> list = new ArrayList<>(1000);
-        for (int i = 0; i < 1000; i++) {
-            list.add(i);
-        }
-
-        for (int i = 0; list.iterator().hasNext(); i++) {
-            System.out.println(list.get(i));
-        }
-
-    }
-
-这段程序会抛出异常，是什么异常？空指针异常吗？
-
-    java.lang.IndexOutOfBoundsException: Index 1000 out of bounds for length 1000
-
-它会抛出数组越界异常，来分析一下。首先创建了一个ArrayList并且为`add()`进去1000个数，下面的for循环是重点。
-它的递增条件是 list调用iterator()方法,返回的迭代器对象再调用'hasNext()'
-
-看一下iterator()的实现：
-
-    public Iterator<E> iterator() {
-        return new Itr();
-    }
-
-返回的迭代器是新创建出来的，也就是说每次在for中执行这里时都返回了一个新的对象，而且List里本来也有1000个元素。
-所以调用`hasNext()`每次都会判定成功。然后在看一下get方法：
-
-    public E get(int index) {
-        Objects.checkIndex(index, size);
-        return elementData(index);
-    }
-
-第一行，执行的方法会核对index是否越界。抛出`IndexOutOfBoundsException`。这段程序重点在是否了解获取迭代器的过程。
-
-
 ### 其他实现接口 ###
 最后看一次下这个类实现的一些其他接口里有什么需要注意的：`List`, `RandomAccess`,`Cloneable`,`Serializable`
 前两个之前都介绍过了，后面的 [`Cloneable`] [clonable]代表着这个List可以实现克隆的功能，看一下他是怎么实现的：
@@ -316,7 +277,7 @@ size，isEmpty，get，set，iterator和listIterator操作以恒定时间运行�
 
 ### 其他注意点 ###
 
-ArrayList是一个泛型类，在编译期保证类型安全。但是不用泛型创建一个新的ArrayList可以吗？当然是可以的
+一、ArrayList是一个泛型类，在编译期保证类型安全。但是不用泛型创建一个新的ArrayList可以吗？当然是可以的
 
     @Test
     public void test4() {
@@ -338,6 +299,48 @@ ArrayList是一个泛型类，在编译期保证类型安全。但是不用泛�
     test
 
 后面的尖括号去掉也没有问题。
+
+
+
+二、看下面一段程序会发生什么：
+
+    public void test() {
+        ArrayList<Integer> list = new ArrayList<>(1000);
+        for (int i = 0; i < 1000; i++) {
+            list.add(i);
+        }
+
+        for (int i = 0; list.iterator().hasNext(); i++) {
+            System.out.println(list.get(i));
+        }
+
+    }
+
+这段程序会抛出异常，是什么异常？空指针异常吗？
+
+    java.lang.IndexOutOfBoundsException: Index 1000 out of bounds for length 1000
+
+它会抛出数组越界异常，来分析一下。首先创建了一个ArrayList并且为`add()`进去1000个数，下面的for循环是重点。
+它的递增条件是 list调用iterator()方法,返回的迭代器对象再调用'hasNext()'
+
+看一下iterator()的实现：
+
+    public Iterator<E> iterator() {
+        return new Itr();
+    }
+
+返回的迭代器是新创建出来的，也就是说每次在for中执行这里时都返回了一个新的对象，而且List里本来也有1000个元素。
+所以调用`hasNext()`每次都会判定成功。然后在看一下get方法：
+
+    public E get(int index) {
+        Objects.checkIndex(index, size);
+        return elementData(index);
+    }
+
+第一行，执行的方法会核对index是否越界。抛出`IndexOutOfBoundsException`。这段程序重点在是否了解获取迭代器的过程。
+
+
+
 
 ### 总结 ###
 
