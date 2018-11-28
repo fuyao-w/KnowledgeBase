@@ -1,10 +1,8 @@
 ## ArrayList
 
-    public class ArrayList<E> extends AbstractList<E>
-    implements List<E>, RandomAccess, Cloneable, Serializable
+    public class ArrayList<E> extends AbstractList<E> implements List<E>, RandomAccess, Cloneable, Serializable
 
-
-
+### java doc ###
 实现了List接口的可调整大小的基于数组的实现。实现所有可选列表操作，并允许所有元素（基本类型或是对象），
 包括null。除了实现List接口之外，此类还提供了一些方法来操作内部用于存储列表的数组的大小。 （这个类大致相当于Vector，除了它是不同步的。）
 size，isEmpty，get，set，iterator和listIterator操作以恒定时间运行。添加操作以分摊的常量时间运行，即添加n个元素需要O（n）时间。
@@ -21,16 +19,16 @@ size，isEmpty，get，set，iterator和listIterator操作以恒定时间运行�
 
     List list = Collections.synchronizedList（new ArrayList（...））;
 
-此类的·iterator·和·listIterator·方法返回的迭代器是**快速失败**的：如果列表在任何时间从结构上修改创建迭代器之后，以任何方式，
+此类的`iterator`和`listIterator`方法返回的迭代器是**快速失败**的：如果列表在任何时间从结构上修改创建迭代器之后，以任何方式，
 除了通过迭代器自身的remove或add方法，迭代器都将抛出ConcurrentModificationException。
 因此，**在并发修改的情况下，迭代器快速而干净地失败**，而不是在未来的未确定时间冒任意，非确定性行为的风险。
 
-请注意，迭代器的快速失败行为无法得到保证，因为一般来说，在存在不同步的并发修改时，不可能做出任何硬性保证。
+**请注意，迭代器的快速失败行为无法得到保证，因为一般来说，在存在不同步的并发修改时，不可能做出任何硬性保证。**
 失败快速迭代器会尽最大努力抛出ConcurrentModificationException。因此，编写依赖于此异常的程序以确保其正确性是错误的：
 迭代器的快速失败行为应该仅用于检测错误。（java doc）
 
 
-
+### 分析 ###
 首先需要分析一下，这个类有的字段
 
     //序列化版本号，这样我们反序列化的时候即使更改了类的结构，也能保证成功。
@@ -274,8 +272,8 @@ size，isEmpty，get，set，iterator和listIterator操作以恒定时间运行�
         }
 
 
-这是ArrayList的序列化方法他是一个私有方法，ObjectOutputStream会通过反射调用这个类的writeObject方法进行序列化，ObjectInputStream会调用相应的readObject方法进行反序列化。
-可以看到，这个方法通过modCount保证线程安全。由于
+这是ArrayList的序列化方法，是一个私有方法，ObjectOutputStream会通过反射调用这个类的writeObject方法进行序列化，ObjectInputStream会调用相应的readObject方法进行反序列化。
+可以看到，这个方法通过modCount保证线程安全。而且ArrayList的序列化只是所保存元素的序列化。因为List只是一个存储数据的容器，把它序列化并无任何意义。
 
 
 [AbsList]: https://github.com/TransientWang/KnowledgeBase/blob/master/base/collections/list.md "AbstractList抽象类"
