@@ -177,4 +177,4 @@ size方法的实现。对于不可修改的列表，程序员只需要实现列�
 
 
 
-[AbstractCollection]:  https://github.com/TransientWang/KnowledgeBase/blob/master/base/collections/AbstractCollection.markdown "AbstractCollection抽象类"
+[AbstractCollection]:  https://github.com/TransientWang/KnowledgeBase/blob/master/base/collections/AbstractCollection.md "AbstractCollection抽象类"

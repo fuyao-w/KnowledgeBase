@@ -70,3 +70,21 @@ setSize方法通过修好elementCount，来修改有效元素的个数。
 ### 总结 ###
 
 Vector是线程的容器。默认容量是10，默认以2次幂大小扩扩容。可以通过setSize()改变有效元素的大小。
+
+
+## Stack ##
+
+    class Stack<E> extends Vector<E> {
+
+### java doc ###
+Stack类表示对象的后进先出（LIFO）堆栈。 它使用五个操作扩展了Vector类，这些操作允许将向量视为堆栈。 提供了常见的推送和弹出操作，以及查看堆栈顶部项目的方法，测试堆栈是否为空的方法，以及搜索堆栈中的项目并发现其距离的方法 是从顶部。
+首次创建堆栈时，它不包含任何项目。
+
+Deque接口及其实现提供了更完整和一致的LIFO堆栈操作集，应优先使用此类。 例如：
+
+    Deque<Integer> stack = new ArrayDeque<Integer>();
+
+### 分析 ###
+
+Stack是一个继承Vector来是实现的栈结构。方法很少不算构造方法只有5个，需要注意的是其中`pop`,
+`peek`方法是由synchronized 修饰的。

@@ -12,3 +12,6 @@
 1. `public abstract Iterator<E> iterator(); //返回此collection中包含的元素的迭代器。`
  
 2. `public abstract int size();` 
+
+
+
