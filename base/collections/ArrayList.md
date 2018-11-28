@@ -145,6 +145,9 @@ size，isEmpty，get，set，iterator和listIterator操作以恒定时间运行�
 不要被这些繁琐的判断绕晕，注意minCapacity是List里已有元素的数量+1，oldCapacity在扩容后超过了MAX_ARRAY_SIZE时，size还没有这么大，
 知道数组里元素的容量已经大于MAX_ARRAY_SIZE时候，才会返回Integer.MaxValue，在这之前都不会进行扩容操作了。
 
+
+### modCount行为 ###
+
 剩下的方法，原理跟`add()`大同小异。下面通过观察迭代器来研究modCount的行为：
 
      private class Itr implements Iterator<E> {
@@ -200,7 +203,33 @@ size，isEmpty，get，set，iterator和listIterator操作以恒定时间运行�
 
 运行这个方法，会抛出`java.util.ConcurrentModificationException`，说明modCount与expectedModCount不相等了，
 它是怎么造成的呢？在第一次执行add()方法之前，就已经创造好了一个新的迭代器对象，expectedModCount值就已经固定了。
-这时候add()方法缺改变了modCount的值，造成了不相等，所以程序fast-fail，抛出异常。现在看在for遍历与迭代器一起使用的时候，程序会fast-fail。
+这时候add()方法缺改变了modCount的值，造成了不相等，所以程序fast-fail，抛出异常。现在看**在for遍历与迭代器一起使用的时候，程序会fast-fail**。
+
+
+下面再看一下另一个例子：
+
+
+        public void test() {
+            ArrayList<Integer> list = new ArrayList<>(9);
+            list.add(1);
+            list.add(2);
+            list.add(3);
+            Iterator<Integer> integerIterator = list.listIterator();
+            for (int i = 0; i < 100; i++) {
+                new Thread(() -> {
+                    while (integerIterator.hasNext()) {
+                        ((ListIterator<Integer>) integerIterator).add(1);
+                        integerIterator.next();
+                    }
+                    System.out.println(list.size());
+                }).start();
+            }
+
+        }
+
+这段程序也会抛出异常，还不一定是一种异常。他抛出了`NoSuchElementException`,`ConcurrentModificationException`。但不是立即就抛出
+如果只开启10个线程。有可能不会抛出异常。这是modeCount的第二个作用：**在多线程条件下可能的不确定行为时，保证迭代器的fast-fail。**
+
 
 
 最后看一次下这个类实现的一些其他接口里有什么需要注意的：`List`, `RandomAccess`,`Cloneable`,`Serializable`
@@ -250,4 +279,6 @@ size，isEmpty，get，set，iterator和listIterator操作以恒定时间运行�
 
 
 [AbsList]: https://github.com/TransientWang/KnowledgeBase/blob/master/base/collections/list.md "AbstractList抽象类"
-[clonable]: https://github.com/TransientWang/KnowledgeBase/blob/master/base/lang/Cloneable.md "Cloneable标志接口
+
+
+[clonable]: https://github.com/TransientWang/KnowledgeBase/blob/master/base/lang/Cloneable.md "Cloneable标志接口"

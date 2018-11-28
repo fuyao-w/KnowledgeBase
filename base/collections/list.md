@@ -130,7 +130,7 @@ List实现使用的标记界面，表明它们支持快速（通常为恒定时�
 >这个字段用在迭代器和列表迭代器实现中，如果此字段的值意外更改，则迭代器(list迭代器)，将在响应迭代器的next方法，remove方法，previous(),set(),add()等方法
 >抛出concurrentmodificationexception 异常，这提供了fast-fail 的行为，而不是在面对迭代过程中，并发修改的非确定性行为。<p>
 >子类们使用这个字段是可选的，如果一个子类希望提供快速失败的迭代器(lsit迭代器),那么 它仅仅需要增加这个字段在他的 add，remove，方法
-(或者其他任何修改了list结构的方法)一个单一的调用add()或者remove()方法，必须增加不超过1 的大小的值，给这个字段。否则，迭代器或者list迭代器将抛出
+(或者其他任何修改了list结构的方法)。在一次调用add(int)或者remove(int)中，modeCount的值只能增加1。否则，迭代器或者list迭代器将抛出
 ConcurrentModificationExceptions 异常。如果一个实现不希望提供快速失败迭代器，这个字段可以忽视。简单的说就是使用该字段让List确保只有被单一线程修改.
 将在分析ArrayList时具体分析modCount的行为，同时会举一个例子，
 
