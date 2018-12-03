@@ -162,6 +162,8 @@ ArrayDeque没有实现`RandomAccess`接口，因为它只能从两端获取元�
 tail在调用`addLast()`的时候回移动到添加所元素下一位，以通过tail==head来判断是否应该扩容。
 有两个迭代器，分别遍历队列的两端。
 
+`addFirst()`与`poolLast()`组合可以实现栈的功能，反之亦然。
+
 
 
 
