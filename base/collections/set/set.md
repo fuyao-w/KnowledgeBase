@@ -30,9 +30,7 @@ set元素的迭代顺序未指定，可能会发生变化。
 它们按序列化表单页面上的指定进行序列化。
 
 
-### 分析 ###
 
-set接口是set类的模板定义了访问集合的基本方法，并且允许从其他集合创建不可变set
 
     static <E> Set<E> of(E e1) {
         return new ImmutableCollections.Set12<>(e1);
@@ -46,6 +44,8 @@ set接口是set类的模板定义了访问集合的基本方法，并且允许�
 ## SortSet ##
 
     public interface SortedSet<E> extends Set<E>
+
+### java doc ###
 
 一个集合，进一步提供其元素的总排序。元素按照它们的自然顺序排序，或者通过通常在排序集创建时提供的比较器排序。 set的迭代器将按升序元素顺序遍历集合。提供了几个额外的操作以利用订购。 （此接口是SortedMap的集合模拟。）
 插入到有序集中的所有元素必须实现Comparable接口（或者由指定的比较器接受）。此外，所有这些元素必须是可相互比较的：e1.compareTo（e2）（或comparator.compare（e1，e2））不得为有序集合中的任何元素e1和e2抛出ClassCastException。尝试违反此限制将导致违规方法或构造函数调用抛出ClassCastException。
@@ -63,5 +63,31 @@ set接口是set类的模板定义了访问集合的基本方法，并且允许�
     SortedSet<String> sub = s.subSet(low+"\0", high);
 
 
+## NavigableSet ##
+
+    public interface NavigableSet<E> extends SortedSet<E>
+
+### java doc ###
+
+使用导航方法扩展的SortedSet返回给定搜索目标的最接近匹配。方法lower（E），floor（E），ceiling（E）和high（E）返回元素分别小于，小于或等于，大于或等于，大于给定元素，如果没有则返回null这样的元素。
+可以按升序或降序访问和遍历NavigableSet。 descendingSet（）方法返回集合的视图，其中所有关系和方向方法的感知都被反转。升序操作和视图的性能可能比降序操作的速度快。此接口还定义了方法pollFirst（）和pollLast（），它们返回并删除最低和最高元素（如果存在），否则返回null。方法subSet（E，boolean，E，boolean），headSet（E，boolean）和tailSet（E，boolean）与类似名称的SortedSet方法的不同之处在于接受描述下限和上限是包含还是排除的其他参数。任何NavigableSet的子集都必须实现NavigableSet接口。
+
+在允许空元素的实现中，导航方法的返回值可能是不明确的。但是，即使在这种情况下，也可以通过检查contains（null）来消除结果的歧义。为避免此类问题，鼓励此接口的实现不允许插入null元素。
+ （请注意，有条件的Comparable元素集本质上不允许null。）
+
+方法subSet（E，E），headSet（E）和tailSet（E）被指定返回SortedSet以允许对SortedSet的现有实现进行兼容改进以实现NavigableSet，但鼓励此接口的扩展和实现覆盖这些方法返回NavigableSet。
+
+## AbstractSet ##
+
+    public abstract class AbstractSet<E> extends AbstractCollection<E> implements Set<E>
+
+### java doc ###
+此类提供set接口的骨干实现，以最大限度地减少实现此接口所需的工作量。
+实现这一过程的过程是通过提交set接口完成的。例如， 例如，add方法不允许将多个对象实例添加到集合中。
+
+请注意，此类不会覆盖AbstractCollection类中的任何摘要。 它只是添加了equals和hashCode的实现。
 
 
+### 分析 ###
+
+以上的接口和抽象类都是set的顶层接口。
