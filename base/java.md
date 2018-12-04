@@ -11,4 +11,4 @@ java的集合类在java.util包下，先看一下util包下集合相关的uml图
 
 
 [collections]: https://github.com/TransientWang/KnowledgeBase/blob/master/picture/collections.png "集合类UML图"
-[collections]: https://github.com/TransientWang/KnowledgeBase/blob/master/base/collections/list/ListTableOfContents.md "集合类目录"
+[collections]: https://github.com/TransientWang/KnowledgeBase/blob/master/base/collections/ListTableOfContents.md "集合类目录"
