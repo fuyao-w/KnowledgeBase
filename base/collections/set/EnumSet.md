@@ -32,6 +32,28 @@
 
 EnumSet是一个特殊的抽象类，它里面只有静态方法，通过静态方法创建枚举set。返回的是它的子类，RegularEnumSet或者JumboEnumSet。
 
+    public static <E extends Enum<E>> EnumSet<E> of(E e) {
+        EnumSet<E> result = noneOf(e.getDeclaringClass());
+        result.add(e);
+        return result;
+    }
+
+可以通过`of()`获取EnumSet实例，`noneOf()`方法是重点：
+
+    public static <E extends Enum<E>> EnumSet<E> noneOf(Class<E> elementType) {
+        Enum<?>[] universe = getUniverse(elementType);
+        if (universe == null)
+            throw new ClassCastException(elementType + " not an enum");
+
+        if (universe.length <= 64)
+            return new RegularEnumSet<>(elementType, universe);
+        else
+            return new JumboEnumSet<>(elementType, universe);
+    }
+
+`getUniverse()`方法返回了枚举类的枚举数组。作为缓存。提高性能。然后根据数组的长度选择创建的实例。
+这正是工厂模式的实现。
+
 
 ## RegularEnumSet ##
 
@@ -43,8 +65,8 @@ EnumSet的私有实现类，用于“常规大小”的枚举类型,具有64或�
 
 
 ### 字段 ###
-   /**
-     * 该集的位向量表示。 2^k 位表示该集合中存在宇宙[k].
+    /**
+     * 该集的位向量表示。 2^k 位表示该集合中存在universe[k].
      */
     private long elements = 0L;
 
@@ -59,3 +81,41 @@ EnumSet的私有实现类，用于“常规大小”的枚举类型,具有64或�
         elements = (-1L >>>  (from.ordinal() - to.ordinal() - 1)) << from.ordinal();
     }
 
+    void addAll() {
+        if (universe.length != 0)
+            elements = -1L >>> -universe.length;
+    }
+
+    public int size() {
+        return Long.bitCount(elements);
+    }
+
+
+>如果左侧操作数的提升类型是int，则只使用右侧操作数的五个最低位作为移位距离。 就好像右手操作数受到按位逻辑AND运算符和掩码值0x1f（0b11111）的影响。 因此，实际使用的移位距离始终在0到31的范围内，包括0和31。
+
+>如果左侧操作数的提升类型是long，则只使用右侧操作数的六个最低位作为移位距离。 就好像右手操作数受到按位逻辑AND运算符和掩码值0x3f（0b111111）的影响。 因此，实际使用的移位距离总是在0到63的范围内，包括0和63。
+
+RegularEnumSet通过位操作long类型变量，来确定枚举值是否在Set中存在。
+
+对于位操作不是很熟悉，推荐一篇博文[EnumSet](https://blog.csdn.net/java_4_ever/article/details/42263297)
+
+
+## JumboEnumSet ##
+
+    class JumboEnumSet<E extends Enum<E>> extends EnumSet<E>
+
+### java doc ###
+
+Enum Set的私有实现类，用于“jumbo”枚举类型,对应超过64个元素的枚举类。
+
+### 字段 ###
+
+    //该集的位向量表示。 此数组的第j个元素的第i位表示此集合中存在Universe [64j + i]。
+    private long elements[];
+
+    // 冗余 - 为性能而维护
+    private int size = 0;
+
+### 分析 ###
+
+JumboEnumSet类与RegularEnumSet差不多，知识用一个long数组来维护数量>64的枚举类。
