@@ -6,9 +6,9 @@ java的集合类在java.util包下，先看一下util包下集合相关的uml图
 下面就开始介绍每个接口和类。
 
 
-* [List目录]()
+* [List目录][List目录]
 
 
 
 [collections]: https://github.com/TransientWang/KnowledgeBase/blob/master/picture/collections.png "集合类UML图"
-[collections]: https://github.com/TransientWang/KnowledgeBase/blob/master/base/collections/ListTableOfContents.md "集合类目录"
+[List目录]: https://github.com/TransientWang/KnowledgeBase/blob/master/base/collections/ListTableOfContents.md "集合类目录"
