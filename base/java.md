@@ -8,7 +8,7 @@ java的集合类在java.util包下，先看一下util包下集合相关的uml图
 * [List](https://github.com/TransientWang/KnowledgeBase/blob/master/base/collections/list/list.md)
 * [set](https://github.com/TransientWang/KnowledgeBase/blob/master/base)
 * [queue](https://github.com/TransientWang/KnowledgeBase/blob/master/base)
-* [AbstractCollection](https://github.com/TransientWang/KnowledgeBase/blob/master/base/collections/AbstractCollection.markdown)
+* [AbstractCollection](https://github.com/TransientWang/KnowledgeBase/blob/master/base/collections/Collection.markdown)
 
 
 

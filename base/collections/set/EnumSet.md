@@ -119,3 +119,4 @@ Enum Set的私有实现类，用于“jumbo”枚举类型,对应超过64个元�
 ### 分析 ###
 
 JumboEnumSet类与RegularEnumSet差不多，知识用一个long数组来维护数量>64的枚举类。
+并且他们两个的迭代器不是快速失败的，不会抛出ConcurrentModificationException。
