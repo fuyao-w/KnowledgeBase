@@ -112,7 +112,7 @@ List实现使用的标记界面，表明它们支持快速（通常为恒定时�
 
 ## AbstractList ##
 
-如果想要了解此类，有必要先了解一下[AbstractCollection][AbstractCollection]类，该抽象类此类提供的骨干实现的List接口以
+如果想要了解此类，有必要先了解一下[Collection][Collection]类，该抽象类此类提供的骨干实现的List接口以
 最小化来实现该接口由一个“随机访问”数据存储备份所需的工作（如阵列）。 对于顺序存取的数据（如链接列表）， AbstractSequentialList应优先使用此类。 
 要实现一个不可修改的列表，程序员只需要扩展这个类并提供get(int)和size()方法的实现。 
 
@@ -177,4 +177,4 @@ size方法的实现。对于不可修改的列表，程序员只需要实现列�
 
 
 
-[AbstractCollection]:  https://github.com/TransientWang/KnowledgeBase/blob/master/base/collections/AbstractCollection.md "AbstractCollection抽象类"
+[Collection]:  https://github.com/TransientWang/KnowledgeBase/blob/master/base/collections/AbstractCollection.md "Collection and AbsCollection"
