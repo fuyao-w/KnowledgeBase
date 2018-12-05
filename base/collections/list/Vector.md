@@ -30,7 +30,7 @@ Vector类实现了一个可增长的对象数组。像数组一样，它包含�
 
 ### 扩容 ###
 
-Vector的初始容量是通过构造方法传进去的 10。capacityIncrement代表着扩容时数组长度的曾量。默认是0。
+Vector的初始容量是通过构造方法传进去的 10。capacityIncrement代表着扩容时数组长度的增量。默认是0。
 
     private int newCapacity(int minCapacity) {
             // overflow-conscious code
@@ -62,7 +62,7 @@ Vector的初始容量是通过构造方法传进去的 10。capacityIncrement代
         elementCount = newSize;
     }
 
-setSize方法通过修好elementCount，来修改有效元素的个数。
+setSize方法通过修改elementCount，来修改有效元素的个数。
 
 除此之外Vector与ArrayList的区别就在于它的公共方法都是synchronized关键字修饰的，这代表他是同步的可以保证线程安全。但是它的性能并不好。
 它很早就已经被不推荐使用了。

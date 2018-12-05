@@ -3,7 +3,7 @@
 
 # List #
 
-* [ArratList][ArrayList]
+* [ArrayList][ArrayList]
 * [LinkedList][LinkedList]
 * [list的顶级接口和相关][list的顶级接口和相关]
 * [Vector][Vector]

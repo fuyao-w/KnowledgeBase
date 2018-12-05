@@ -1,6 +1,6 @@
 ## RandomAccess（标志接口） ##
 
-List实现使用的标记界面，表明它们支持快速（通常为恒定时间）随机访问。 此接口的主要目的是允许通用算法更改其行为，以便在应用于随机访问列表或顺序访问列表时提供良好的性能。
+List实现使用的标记接口，表明它们支持快速（通常为恒定时间）随机访问。 此接口的主要目的是允许通用算法更改其行为，以便在应用于随机访问列表或顺序访问列表时提供良好的性能。
 
 
 一般实现了这个接口的list用for循环比用迭代器循环快,比如ArrayList，没有实现这个接口的list用迭代器遍历比用for循环更快比如LinkedList。
@@ -113,22 +113,22 @@ List实现使用的标记界面，表明它们支持快速（通常为恒定时�
 ## AbstractList ##
 
 如果想要了解此类，有必要先了解一下[Collection][Collection]类，该抽象类此类提供的骨干实现的List接口以
-最小化来实现该接口由一个“随机访问”数据存储备份所需的工作（如阵列）。 对于顺序存取的数据（如链接列表）， AbstractSequentialList应优先使用此类。 
+最小化来实现该接口由一个“随机访问”数据存储备份所需的工作（如阵列）。 对于顺序存取的数据（如链接列表）， 应优先使用AbstractSequentialList。
 要实现一个不可修改的列表，程序员只需要扩展这个类并提供get(int)和size()方法的实现。 
 
 
-要实现可修改的列表，程序员必须另外覆盖set(int, E)方法（否则会抛出一个UnsupportedOperationException ）。 如果列表是可变大小，则程序员必须另外覆盖add(int, E)和remove(int)方法。 
-根据Collection接口规范中的建议，程序员通常应该提供一个void（无参数）和集合构造函数。 
+要实现可修改的列表，程序员必须另外覆盖set(int, E)方法（默认会抛出一个UnsupportedOperationException ）。 如果列表是可变大小，则程序员必须另外覆盖add(int, E)和remove(int)方法。
+根据Collection接口规范中的建议，程序员通常应该提供一个void（无参数）和集合（Collection）的构造函数。
 
 
-不像其他的抽象集合实现，程序员不必提供迭代器实现; 迭代器和列表迭代器由此类实现的，对的“随机访问”方法上： get(int) ， set(int, E) ， add(int, E)和remove(int) 。 
+不像其他的抽象集合实现，程序员不必在子类提供迭代器实现; 迭代器和列表迭代器由此类实现的，对的“随机访问”方法上： get(int) ， set(int, E) ， add(int, E)和remove(int) 。
 我们可以通过继承这个类实现自己需要的List（源自官方文档）
     
 该类有一个字段`protected transient int modCount = 0;` []()
 
 >代表这个list的结构已经被修改过的次数，结构修改是那些改变list的size属性，或者其他方式如迭代进度可能会产生不正确的结果
 >这个字段用在迭代器和列表迭代器实现中，如果此字段的值意外更改，则迭代器(list迭代器)，将在响应迭代器的next方法，remove方法，previous(),set(),add()等方法
->抛出concurrentmodificationexception 异常，这提供了fast-fail 的行为，而不是在面对迭代过程中，并发修改的非确定性行为。<p>
+>抛出`concurrentmodificationexception` 异常，这提供了fast-fail 的行为，而不是在面对迭代过程中，并发修改的非确定性行为。<p>
 >子类们使用这个字段是可选的，如果一个子类希望提供快速失败的迭代器(lsit迭代器),那么 它仅仅需要增加这个字段在他的 add，remove，方法
 (或者其他任何修改了list结构的方法)。在一次调用add(int)或者remove(int)中，modeCount的值只能增加1。否则，迭代器或者list迭代器将抛出
 ConcurrentModificationExceptions 异常。如果一个实现不希望提供快速失败迭代器，这个字段可以忽视。简单的说就是使用该字段让List确保只有被单一线程修改.
@@ -149,6 +149,8 @@ ConcurrentModificationExceptions 异常。如果一个实现不希望提供快�
 
 
 ## AbstractSequentialList ##
+
+    public abstract class AbstractSequentialList<E> extends AbstractList<E>
 
 该类不与之前介绍的两个类在同一层，但是它也是一个抽象类，并且是LinkedList的父类，所以在本页来分析这个类
 

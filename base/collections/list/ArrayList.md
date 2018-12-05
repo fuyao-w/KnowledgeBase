@@ -4,7 +4,7 @@
 
 ### java doc ###
 实现了List接口的可调整大小的基于数组的实现。实现所有可选列表操作，并允许所有元素（基本类型或是对象），
-包括null。除了实现List接口之外，此类还提供了一些方法来操作内部用于存储列表的数组的大小。 （这个类大致相当于Vector，除了它是不同步的。）
+**包括null**。除了实现List接口之外，此类还提供了一些方法来操作内部用于存储列表的数组的大小。 （这个类大致相当于Vector，除了它是不同步的。）
 size，isEmpty，get，set，iterator和listIterator操作以恒定时间运行。添加操作以分摊的常量时间运行，即添加n个元素需要O（n）时间。
 所有其他操作都以线性时间运行（粗略地说）。与LinkedList实现相比，常数因子较低。
 
@@ -33,28 +33,28 @@ size，isEmpty，get，set，iterator和listIterator操作以恒定时间运行�
 
     //序列化版本号，这样我们反序列化的时候即使更改了类的结构，也能保证成功。
     private static final long serialVersionUID = 8683452581122892189L;
-
+    
     //默认初始容量,当创建ArrayList是如果没有向构造函数传入想要的初始容量的话，那么这个ArrayList默认的初始容量就是10.
     private static final int DEFAULT_CAPACITY = 10;
-
+    
     //数组缓冲区，其中存储了ArrayList的元素。 Array List的容量是此数组缓冲区的长度。
     //添加第一个元素时，任何带有elementData == DEFAULTCAPACITY_EMPTY_ELEMENTDATA(在下面)的空数组列表将扩展为DEFAULT_CAPACITY
     //ArrayList存储元素用到的数组，注意它被transient修饰，这代表它不会被序列化。
     transient Object[] elementData;
-
+    
     //用于空实例的共享空数组实例,它主要在两部分会用到。如果我们设置了初始化容量是0。会把它赋值给elementData，
     //另一个地方是反序列化的时候，反序列化的元素数量为0，也会把它赋值给elementData。
     private static final Object[] EMPTY_ELEMENTDATA = {};
-
+    
     ////用于默认大小的空实例的共享空数组实例。 我们将它与EMPTY ELEMENTDATA区分开来，以便知道在添加第一个元素时要膨胀多少
     private static final Object[] DEFAULTCAPACITY_EMPTY_ELEMENTDATA = {};
-
+    
     //列表里包含的元素的的大小
     private int size;
-
+    
     //容量最大值，在AbstractCollection中介绍过。
     private static final int MAX_ARRAY_SIZE = Integer.MAX_VALUE - 8;
-
+    
     //继承自AbstractList
     protected transient int modCount = 0;
 
@@ -64,7 +64,7 @@ size，isEmpty，get，set，iterator和listIterator操作以恒定时间运行�
      public ArrayList() {
             this.elementData = DEFAULTCAPACITY_EMPTY_ELEMENTDATA;
         }
-
+    
     public ArrayList(int initialCapacity) {
         if (initialCapacity > 0) { //如果初始容量>0 那么就创建一个新的长度为initialCapacity的，Object数组
             this.elementData = new Object[initialCapacity];
@@ -75,7 +75,7 @@ size，isEmpty，get，set，iterator和listIterator操作以恒定时间运行�
                                                initialCapacity);
         }
     }
-
+    
     public ArrayList(Collection<? extends E> c) {
         elementData = c.toArray();
         if ((size = elementData.length) != 0) {
@@ -152,14 +152,14 @@ size，isEmpty，get，set，iterator和listIterator操作以恒定时间运行�
             int cursor;       // index of next element to return
             int lastRet = -1; // index of last element returned; -1 if no such
             int expectedModCount = modCount;
-
+    
             // prevent creating a synthetic constructor
             Itr() {}
-
+    
             public boolean hasNext() {
                 return cursor != size;
             }
-
+    
             @SuppressWarnings("unchecked")
             public E next() {
                 checkForComodification();
@@ -182,7 +182,7 @@ size，isEmpty，get，set，iterator和listIterator操作以恒定时间运行�
 
 这是next()的首先执行的方法，就是判断modCount与expectedModCount是否相等。那么什么情况下会不相等呢,还记得`add()`方法吗，
 它首先会将modCount+1，在其他的方法里也一样，改变了elementData里的元素多少次modCount就加几次。但是除了迭代器之外的方法里都没有执行这个方法。
-也就是说它的第一个功能就是记录修改数组元素的操作次数。但是并不会出现modCount与expectedModCount不相等的情况，那就只有在使用迭代器里会发生不相等的情况了。
+也就是说它的第一个功能就是记录修改数组元素的操作次数。但是并不会出现modCount与expectedModCount不相等的情况，只有在使用迭代器里会发生不相等的情况了。
 
     public void test() {
         ArrayList<Integer> list = new ArrayList<>(9);
@@ -196,7 +196,7 @@ size，isEmpty，get，set，iterator和listIterator操作以恒定时间运行�
                 integerIterator.next();
             }
         }
-
+    
     }
 
 运行这个方法，会抛出`java.util.ConcurrentModificationException`，说明modCount与expectedModCount不相等了，
@@ -222,7 +222,7 @@ size，isEmpty，get，set，iterator和listIterator操作以恒定时间运行�
                     System.out.println(list.size());
                 }).start();
             }
-
+    
         }
 
 这段程序也会抛出异常，还不一定是一种异常。他抛出了`NoSuchElementException`,`ConcurrentModificationException`。但不是立即就抛出
@@ -257,15 +257,15 @@ size，isEmpty，get，set，iterator和listIterator操作以恒定时间运行�
             // Write out element count, and any hidden stuff
             int expectedModCount = modCount;
             s.defaultWriteObject();
-
+    
             // Write out size as capacity for behavioral compatibility with clone()
             s.writeInt(size);
-
+    
             // Write out all elements in the proper order.
             for (int i=0; i<size; i++) {
                 s.writeObject(elementData[i]);
             }
-
+    
             if (modCount != expectedModCount) {
                 throw new ConcurrentModificationException();
             }
@@ -289,9 +289,9 @@ size，isEmpty，get，set，iterator和listIterator操作以恒定时间运行�
         list.add("test");
         list.forEach(System.out::println);
     }
-
+    
     console output:
-
+    
     1
     1.1
     1.0
@@ -309,11 +309,11 @@ size，isEmpty，get，set，iterator和listIterator操作以恒定时间运行�
         for (int i = 0; i < 1000; i++) {
             list.add(i);
         }
-
+    
         for (int i = 0; list.iterator().hasNext(); i++) {
             System.out.println(list.get(i));
         }
-
+    
     }
 
 这段程序会抛出异常，是什么异常？空指针异常吗？

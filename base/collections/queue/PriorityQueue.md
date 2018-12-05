@@ -18,9 +18,9 @@
 
 
     private static final long serialVersionUID = -7720805057305804111L;
-
+    
     private static final int DEFAULT_INITIAL_CAPACITY = 11;
-
+    
     /**
      *  优先级队列表示为平衡二进制堆：两者
      *  queue [n]的子节点是队列[2 * n + 1]和队列[2 *（n + 1）]。
@@ -29,17 +29,17 @@
      *  具有最低值的元素在队列[0]中。
      */
     transient Object[] queue; // 非私有，以简化嵌套类访问
-
+    
     /**
      * 优先级队列中的元素数
      */
     int size;
-
+    
     /**
      * 比较器，如果优先级队列使用元素的自然顺序，则为null
      */
     private final Comparator<? super E> comparator;
-
+    
     /**
      * 此优先级队列已被结构修改的次数
      */
@@ -56,11 +56,11 @@
     public PriorityQueue(int initialCapacity) {
         this(initialCapacity, null);
     }
-
+    
     public PriorityQueue(Comparator<? super E> comparator) {
         this(DEFAULT_INITIAL_CAPACITY, comparator);
     }
-
+    
     public PriorityQueue(int initialCapacity,
                          Comparator<? super E> comparator) {
         // Note: This restriction of at least one is not actually needed,
@@ -70,7 +70,7 @@
         this.queue = new Object[initialCapacity];
         this.comparator = comparator;
     }
-
+    
     public PriorityQueue(Collection<? extends E> c) {
         if (c instanceof SortedSet<?>) {
             SortedSet<? extends E> ss = (SortedSet<? extends E>) c;
@@ -87,12 +87,12 @@
             initFromCollection(c);
         }
     }
-
+    
     public PriorityQueue(PriorityQueue<? extends E> c) {
         this.comparator = (Comparator<? super E>) c.comparator();
         initFromPriorityQueue(c);
     }
-
+    
     public PriorityQueue(SortedSet<? extends E> c) {
         this.comparator = (Comparator<? super E>) c.comparator();
         initElementsFromCollection(c);
@@ -128,7 +128,7 @@
         queue = Arrays.copyOf(queue, newCapacity);
     }
 
-优先级队列的扩容方式与数组双端队列一样，61以下+2,以上扩大50%。通过`hugeCapacity()`控制int值溢出。
+优先级队列的扩容方式与数组双端队列一样，64以下+2,以上扩大50%。通过`hugeCapacity()`控制int值溢出。
 然后复制到新数组就可以了。
 
     private void siftUp(int k, E x) {
@@ -137,7 +137,7 @@
         else
             siftUpComparable(k, x, queue);
     }
-
+    
     private static <T> void siftUpComparable(int k, T x, Object[] es) {
         Comparable<? super T> key = (Comparable<? super T>) x;
         while (k > 0) {
@@ -209,7 +209,7 @@
         else
             siftDownComparable(k, x, queue, size);
     }
-
+    
     private static <T> void siftDownComparable(int k, T x, Object[] es, int n) {
         // assert n > 0;
         Comparable<? super T> key = (Comparable<? super T>)x;

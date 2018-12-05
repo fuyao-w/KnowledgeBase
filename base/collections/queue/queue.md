@@ -9,24 +9,26 @@
 另一种返回特殊值（null或false，具体取决于操作）。
 后一种形式的插入操作专门用于容量限制的队列实现; 在大多数实现中，插入操作不会失败。
 
+|         | Throws exception | Returns special value |
+| :-----: | :--------------: | :-------------------: |
+| Insert  |      add(e)      |       offer(e)        |
+| Remove  |     remove()     |        poll()         |
+| Examine |    element()     |        peek()         |
 
-    Summary of Queue methods
-            Throws exception	  Returns special value
-    Insert	add(e)	              offer(e)
-    Remove	remove()	          poll()
-    Examine	element()	          peek()
+
+
 
 队列通常（但不一定）以FIFO（先进先出）方式对元素进行排序。其中的例外是优先级队列，它根据提供的比较器对元素进行排序，或者元素的自然顺序，以及LIFO队列（或堆栈），它们对元素LIFO（后进先出）进行排序。无论使用什么顺序，队列的头部是通过调用remove（）或poll（）来移除的元素。在FIFO队列中，所有新元素都插入队列的尾部。其他类型的队列可能使用不同的放置规则。每个Queue实现都必须指定其排序属性。
 
 如果可能，offer方法插入一个元素，否则返回false。这与Collection.add方法不同，后者只能通过抛出未经检查的异常来添加元素。 offer方法设计用于当故障是正常而非异常发生时，例如，在固定容量（或“有界”）队列中。
 
-remove（）和poll（）方法删除并返回队列的头部。确切地说，从队列中删除哪个元素是队列排序策略的一个功能，该策略因实现而异。 remove（）和poll（）方法的不同之处仅在于队列为空时的行为：remove（）方法抛出异常，而poll（）方法返回null。
+`remove()`和`poll()`方法删除并返回队列的头部。确切地说，从队列中删除哪个元素是队列排序策略的一个功能，该策略因实现而异。 remove（）和poll（）方法的不同之处仅在于队列为空时的行为：remove（）方法抛出异常，而poll（）方法返回null。
 
-element（）和peek（）方法返回但不删除队列的头部。
+`element()`和`peek()`方法返回但不删除队列的头部。
 
 Queue接口未定义阻塞队列方法，这在并发编程中很常见。这些等待元素出现或空间变得可用的方法在BlockingQueue接口中定义，该接口扩展了该接口。
 
-队列实现通常不允许插入null元素，尽管某些实现（如LinkedList）不禁止插入null。即使在允许它的实现中，也不应将null插入到Queue中，因为null也被poll方法用作特殊返回值，以指示队列不包含任何元素。
+队列实现通常 **不允许插入null元素** ，尽管某些实现（如LinkedList）不禁止插入null。即使在允许它的实现中，也不应将null插入到Queue中，因为null也被poll方法用作特殊返回值，以指示队列不包含任何元素。
 
 队列实现通常不定义基于元素的方法equals和hashCode版本，而是从Object类继承基于身份的版本，因为基于元素的相等性并不总是为具有相同元素但具有不同排序属性的队列定义良好。
 
@@ -124,7 +126,7 @@ Queue接口是队列实现的顶级接口继承自Collection，提供了实现�
    </tbody>
   </table>
 
-  Deques也可以用作LIFO（后进先出）堆栈。 应优先使用此接口，而不是传统的Stack类。 当deque用作堆栈时，元素将从双端队列的开头推出并弹出。 堆栈方法等同于Deque方法，如下表所示：
+  **Deques也可以用作LIFO（后进先出）堆栈**。 应优先使用此接口，而不是传统的Stack类。 当deque用作堆栈时，元素将从双端队列的开头推出并弹出。 堆栈方法等同于Deque方法，如下表所示：
 
   <table class="striped">
    <caption>Comparison of Stack and Deque methods</caption>
