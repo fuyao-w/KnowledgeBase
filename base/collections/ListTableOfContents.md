@@ -23,7 +23,7 @@
 
 
 
-
+## [集合类扩容方式总结][集合类扩容方式总结] ##
 
 
 
@@ -50,3 +50,4 @@
 [HashAndLinkedSet]:https://github.com/TransientWang/KnowledgeBase/blob/master/base/collections/set/HashAndLinkedSet.md "PriorityQueue"
 [TreeSet]:https://github.com/TransientWang/KnowledgeBase/blob/master/base/collections/set/TreeSet.md "ArratDeque"
 [EnumSet]:https://github.com/TransientWang/KnowledgeBase/blob/master/base/collections/set/EnumSet.md "ArratDeque"
+[集合类扩容方式总结]: https://github.com/TransientWang/KnowledgeBase/blob/master/base/collections/集合类扩容方式总结.md	"集合类扩容方式总结"
