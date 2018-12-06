@@ -346,7 +346,7 @@ size，isEmpty，get，set，iterator和listIterator操作以恒定时间运行�
 
 ArrayList结构比较简单，需要关注的地方。就是扩容机制，fast-fail。
 
-[AbsList]: https://github.com/TransientWang/Knowledgebase/java/blob/master/base/java/collections/list/list.md "AbstractList抽象类"
+[AbsList]: https://github.com/TransientWang/KnowledgeBase/blob/master/base/java/collections/list/list.md "AbstractList抽象类"
 
 
-[clonable]: https://github.com/TransientWang/Knowledgebase/java/blob/master/base/java/lang/Cloneable.md "Cloneable标志接口"
+[clonable]: https://github.com/TransientWang/KnowledgeBase/blob/master/base/java/lang/Cloneable.md "Cloneable标志接口"
