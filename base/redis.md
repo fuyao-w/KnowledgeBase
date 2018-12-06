@@ -20,7 +20,7 @@ LRU实际上只是支持的驱逐方法之一。此页面介绍了Redis `maxmemo
 
 
 
-## Maxmemory配置指令
+### Maxmemory配置指令
 
 所述`maxmemory`配置指令，以便用于Redis的配置为使用的存储器的指定量的数据集。可以使用该`redis.conf`文件设置配置指令，或稍后在运行时使用[CONFIG SET](https://redis.io/commands/config-set)命令。
 
@@ -34,7 +34,7 @@ maxmemory 100mb
 
 达到指定的内存量时，可以在不同的行为中进行选择，称为**策略**。Redis可以只返回可能导致使用更多内存的命令的错误，或者它可以逐出旧数据以便每次添加新数据时返回到指定的限制。
 
-## 驱逐政策
+### 驱逐政策
 
 `maxmemory`使用`maxmemory-policy`配置指令配置达到限制时Redis遵循的确切行为。
 
