@@ -179,4 +179,4 @@ size方法的实现。对于不可修改的列表，程序员只需要实现列�
 
 
 
-[Collection]:  https://github.com/TransientWang/KnowledgeBase/blob/master/base/collections/AbstractCollection.md "Collection and AbsCollection"
+[Collection]:  https://github.com/TransientWang/Knowledgebase/java/blob/master/base/java/collections/AbstractCollection.md "Collection and AbsCollection"
