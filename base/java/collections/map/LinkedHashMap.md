@@ -49,7 +49,7 @@ static class Entry<K,V> extends HashMap.Node<K,V> {
 }
 ```
 
-LinkedHashMap的在Node的基础上增加了before和after两个，变量来确定元素的顺序。
+LinkedHashMap的在Node的基础上增加了before和after两个变量，变量来确定元素的顺序。
 
 ###  字段
 
