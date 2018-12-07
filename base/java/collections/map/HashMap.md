@@ -399,24 +399,23 @@ for (int j = 0; j < oldCap; ++j) {
 
 ​	
 
-只有一个节点：会被重新hash（e.hash & (newCap - 1)）,新位置有两种情况，hash到原位置，2次幂的偏移量hash到新的位置。
+1. 只有一个节点,会被重新hash（e.hash & (newCap - 1)）,新位置有两种情况，hash到原位置，2次幂的偏移量hash到新的位置。
 
-链表：当索引位置是链表的时候。分为三种情况：
+2. 链表：当索引位置是链表的时候。分为三种情况：
+   1. 元素在旧数组上hash后的索引位置为0，这种情况出现于 `（key.hashCode=oldCap）*n+n & oldCap`这种情况，会被重新分配在新数组相对于旧数组相同的位置上。
+   2. 元素在旧数组上索引位置不为0，会被重新分配在旧数组位置+oldCap的新位置。
+      1. 原来在hash在0索引位置的Node的key值，被修改后重新hash不在0索引位置，和原来hash不在0索引位置的Node重新hash后在0索引位置。
 
-1. 元素在旧数组上hash后的索引位置为0，这种情况出现于 `（key.hashCode=oldCap）*n+n & oldCap`这种情况，会被重新分配在新数组相对于旧数组相同的位置上。
-2. 元素在旧数组上索引位置不为0，会被重新分配在旧数组位置+oldCap的新位置。
-3.  原来在hash在0索引位置的Node的key值，被修改后重新hash不在0索引位置，和原来hash不在0索引位置的Node重新hash后在0索引位置。
+   ```java
+   Node<K,V> loHead = null, loTail = null;
+   Node<K,V> hiHead = null, hiTail = null;
+   ```
 
-```java
-Node<K,V> loHead = null, loTail = null;
-Node<K,V> hiHead = null, hiTail = null;
-```
+   为了将链表中心分配在新数组，声明了四个变量。loHead,loTail对应第一种情况，hiHead，hiTail对应第二种情况。
 
-为了将链表中心分配在新数组，声明了四个变量。loHead,loTail对应第一种情况，hiHead，hiTail对应第二种情况。
+   前两种情况，lo/hiTail节点只是向后移动,第三种情况以图片为例：
 
-前两情框，lo/hiTail节点只是向后移动,第三种情况以图片为例：
-
-![](https://github.com/TransientWang/KnowledgeBase/blob/master/picture/HashMap_resize().png)
+   ![](https://github.com/TransientWang/KnowledgeBase/blob/master/picture/HashMap_resize().png)
 
 - `e节点`是链表的首节点，也是当前节点。它的hash在索引0的位置。这时候`loHead`,`loTail`都被赋值`e`。
 - 然后`e节点`后面`f节点`成为新的当前节点。此时`loHead.next`、`loTail.next`都指向g。
@@ -424,5 +423,5 @@ Node<K,V> hiHead = null, hiTail = null;
 - 接下来`g`又成为了新的当前节点。
 - `g`重新hash到0的位置，此时`loTail`=`e`，`loTail.next`指向当前节点`g`。并将`loTaol`移动到当前节点`g`。这样就略过了`f节点`。
 
-* 当循环结束时候进行两次判断，第一次将索引在0位置的新链表的loTail置空，放置在新数组相对于旧数组的相同位置j,第二次将索引在1位置的新链表Tail置空，注意，之前`hiHead`,`hiTail`的下一节点都指向`f`。如果不将尾部断开会形成二叉树，这是错误的。
+- 当循环结束时候进行两次判断，第一次将索引在0位置的新链表的loTail置空，放置在新数组相对于旧数组的相同位置j,第二次将索引在1位置的新链表Tail置空，注意，之前`hiHead`,`hiTail`的下一节点都指向`f`。如果不将尾部断开会形成二叉树，这是错误的。
 
