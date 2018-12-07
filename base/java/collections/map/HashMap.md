@@ -206,8 +206,6 @@ final float loadFactor;
 
 通过HashMap里的字段和内部类`Node`可以分析出，HashMap是一个Node数组+单向链表+树组成的结构。其中Node代表链表的的一个节点。几个常量DEFAULT_INITIAL_CAPACITY代表HashMap的默认数组长度16，DEFAULT_LOAD_FACTOR是加载因子，加载因子*数组长度代表HashMap扩容的阈值。MIN_TREEIFY_CAPACITY是HashMap里数组里链表转化成树的最小数组长度64。TREEIFY_THRESHOLD是在数组长度大于64后数组索引上的链表可以转化成树的最小链表长度。TREEIFY_THRESHOLD  当索引上的树重新转换成链表的最小元素数量。MAXIMUM_CAPACITY是数组最大长度。
 
-### #### 构造方法 ###
-
 ```java
 public HashMap(int initialCapacity, float loadFactor) {
     if (initialCapacity < 0)
