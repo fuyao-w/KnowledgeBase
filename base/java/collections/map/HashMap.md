@@ -206,6 +206,8 @@ final float loadFactor;
 
 通过HashMap里的字段和内部类`Node`可以分析出，HashMap是一个Node数组+单向链表+树组成的结构。其中Node代表链表的的一个节点。几个常量DEFAULT_INITIAL_CAPACITY代表HashMap的默认数组长度16，DEFAULT_LOAD_FACTOR是加载因子，加载因子*数组长度代表HashMap扩容的阈值。MIN_TREEIFY_CAPACITY是HashMap里数组里链表转化成树的最小数组长度64。TREEIFY_THRESHOLD是在数组长度大于64后数组索引上的链表可以转化成树的最小链表长度。TREEIFY_THRESHOLD  当索引上的树重新转换成链表的最小元素数量。MAXIMUM_CAPACITY是数组最大长度。
 
+### 构造方法
+
 ```java
 public HashMap(int initialCapacity, float loadFactor) {
     if (initialCapacity < 0)
@@ -247,6 +249,8 @@ public static int numberOfLeadingZeros(int i) {
 构造方法与1.8有了变化。在初始化的时候前面的都好理解，初始化了加载因子。threshold值是通过`tableSizeFor`方法返回的，该方法会返回一个给定的初始值的最接近的数字，这个数字为2的整数次幂。
 
 接下来分析`put()`:
+
+### put ###
 
 ```java
 public V put(K key, V value) {
@@ -307,6 +311,8 @@ final V putVal(int hash, K key, V value, boolean onlyIfAbsent,
 ```
 
 `put()`首先会重新计算key的hash值，目的是为了将key更加均匀的散列在数组中，防止有些位置永远不会被用于索引计算。在`putVal()`开始，先判断table数组是否为空或者长度为0。因为在之前的构造方法中，没有对table数组进行操作，所以此时table数组为空。会调用`resize()`方法：
+
+#### resize ####
 
 ```java
 final Node<K,V>[] resize() {
@@ -411,7 +417,7 @@ for (int j = 0; j < oldCap; ++j) {
    Node<K,V> hiHead = null, hiTail = null;
    ```
 
-   为了将链表中心分配在新数组，声明了四个变量。loHead,loTail对应第一种情况，hiHead，hiTail对应第二种情况。
+   为了将链表中心分配在新数组，声明了四个变量。loHead,loTail对应第一种情								  况，hiHead，hiTail对应第二种情况。
 
    前两种情况，lo/hiTail节点只是向后移动,第三种情况以图片为例：
 
@@ -425,3 +431,40 @@ for (int j = 0; j < oldCap; ++j) {
 
 - 当循环结束时候进行两次判断，第一次将索引在0位置的新链表的loTail置空，放置在新数组相对于旧数组的相同位置j,第二次将索引在1位置的新链表Tail置空，注意，之前`hiHead`,`hiTail`的下一节点都指向`f`。如果不将尾部断开会形成二叉树，这是错误的。
 
+3. 索引位置是树：对于树的操作与链表基本是一样的，还会判断当数元素数量小于6的时候将树还原成链表。
+
+#### resize()结束 
+
+重新回到`putVal()`方法当中，`resize()`方法之后判断，新元素的hash计算的索引位置是否为空，为空直接包装一个Node节点。赋值给索引上就可以了。
+
+如果该索引位置不为空，则会判断该Node节点是否与新加入的key相同，相同就可以替换返回旧值。如果不相同，则会判断该节点是否是树，是的话调用`putTreeVal()`替换或者直接插入，不是的话会遍历当前链表，找到key相同的node节点或者或者将新节点放到链表末尾。新插入的好话就要判断该索引也就是bucket上的元素数量是否达到了扩容标准，元素数量是否大于8，和table数组长度是否大于64，如果一个标准没达到，则扩容。如果可以扩容，则将Node链表替换成TreeNode链表再进行转换数操作。
+
+如果是新插入节点，则会最后进行一次是否应该扩容的判断。
+
+#### putVal()结束 ####
+
+#### get() ###
+
+```java
+final Node<K,V> getNode(int hash, Object key) {
+    Node<K,V>[] tab; Node<K,V> first, e; int n; K k;
+    if ((tab = table) != null && (n = tab.length) > 0 &&
+        (first = tab[(n - 1) & hash]) != null) {
+        if (first.hash == hash && // always check first node
+            ((k = first.key) == key || (key != null && key.equals(k))))
+            return first;
+        if ((e = first.next) != null) {
+            if (first instanceof TreeNode)
+                return ((TreeNode<K,V>)first).getTreeNode(hash, key);
+            do {
+                if (e.hash == hash &&
+                    ((k = e.key) == key || (key != null && key.equals(k))))
+                    return e;
+            } while ((e = e.next) != null);
+        }
+    }
+    return null;
+}
+```
+
+对于`get()`需要了解的是，必须是key的hash值相等，并且调用`equals`方法也返回true的时候才能证明这就是需要的key。
