@@ -26,6 +26,20 @@ HashMap的一个实例有两个影响其性能的参数：初始容量和负载�
 
 请注意，迭代器的快速失败行为无法得到保证，因为一般来说，在存在不同步的并发修改时，不可能做出任何硬性保证。 失败快速迭代器会尽最大努力抛出`ConcurrentModificationException`。 因此，编写依赖于此异常的程序以确保其正确性是错误的：迭代器的快速失败行为应该仅用于检测错误。
 
+### 静态类
+
+```
+static class Node<K,V> implements Map.Entry<K,V> {
+
+        final int hash;
+        final K key;
+        V value;
+        Node<K,V> next;
+}
+```
+
+该类是基本哈希bin节点，
+
 ### 字段 ### 
 
 实施说明。
@@ -151,3 +165,266 @@ static final int UNTREEIFY_THRESHOLD = 6;
  */
 static final int MIN_TREEIFY_CAPACITY = 64;
 ```
+
+```
+/**
+ * 该表在首次使用时初始化，并根据需要调整大小。 分配时，长度始终是2的幂。    	*（我们还在一些操作中容忍长度为零，以允许当前不需要的自举机制.)
+ */
+transient Node<K,V>[] table;
+
+/**
+*保持缓存的entrySet（）。 请注意，AbstractMap字段用于keySet（）和  	  *`values（）`。
+*/
+transient Set<Map.Entry<K,V>> entrySet;
+
+/**
+ * 此映射中包含的键 - 值映射的数量。
+ */
+transient int size;
+
+
+transient int modCount;
+
+/**
+ * 要调整大小的下一个大小值（capacity * load factor）。
+ * 扩容的阈值
+ */
+
+int threshold;
+
+/**
+ * hash表的加载因子
+ */
+final float loadFactor;
+```
+
+
+
+
+
+### 分析 ###
+
+通过HashMap里的字段和内部类`Node`可以分析出，HashMap是一个Node数组+单向链表+树组成的结构。其中Node代表链表的的一个节点。几个常量DEFAULT_INITIAL_CAPACITY代表HashMap的默认数组长度16，DEFAULT_LOAD_FACTOR是加载因子，加载因子*数组长度代表HashMap扩容的阈值。MIN_TREEIFY_CAPACITY是HashMap里数组里链表转化成树的最小数组长度64。TREEIFY_THRESHOLD是在数组长度大于64后数组索引上的链表可以转化成树的最小链表长度。TREEIFY_THRESHOLD  当索引上的树重新转换成链表的最小元素数量。MAXIMUM_CAPACITY是数组最大长度。
+
+### #### 构造方法 ###
+
+```java
+public HashMap(int initialCapacity, float loadFactor) {
+    if (initialCapacity < 0)
+        throw new IllegalArgumentException("Illegal initial capacity: " +
+                                           initialCapacity);
+    if (initialCapacity > MAXIMUM_CAPACITY)
+        initialCapacity = MAXIMUM_CAPACITY;
+    if (loadFactor <= 0 || Float.isNaN(loadFactor))
+        throw new IllegalArgumentException("Illegal load factor: " +
+                                           loadFactor);
+    this.loadFactor = loadFactor;
+    this.threshold = tableSizeFor(initialCapacity);
+}
+```
+
+```
+//返回与给定值最接近的数字。这个数字为2的整数次幂。
+static final int tableSizeFor(int cap) {
+    int n = -1 >>> Integer.numberOfLeadingZeros(cap - 1);
+    return (n < 0) ? 1 : (n >= MAXIMUM_CAPACITY) ? MAXIMUM_CAPACITY : n + 1;
+}
+```
+
+```
+//指定int值的二进制补码二进制表示中最高位（“最左侧”）一位之前的零位数，如果该值等于零，则为32。
+public static int numberOfLeadingZeros(int i) {
+    // HD, Count leading 0's
+    if (i <= 0)
+        return i == 0 ? 32 : 0;
+    int n = 31;
+    if (i >= 1 << 16) { n -= 16; i >>>= 16; }
+    if (i >= 1 <<  8) { n -=  8; i >>>=  8; }
+    if (i >= 1 <<  4) { n -=  4; i >>>=  4; }
+    if (i >= 1 <<  2) { n -=  2; i >>>=  2; }
+    return n - (i >>> 1);
+}
+```
+
+构造方法与1.8有了变化。在初始化的时候前面的都好理解，初始化了加载因子。threshold值是通过`tableSizeFor`方法返回的，该方法会返回一个给定的初始值的最接近的数字，这个数字为2的整数次幂。
+
+接下来分析`put()`:
+
+```java
+public V put(K key, V value) {
+    return putVal(hash(key), key, value, false, true);
+}
+计算key.hashCode（）并将散列（XOR）更高的散列位降低。 因为该表使用2次幂掩蔽，所以仅在当前掩码之上的位中变化的散列组将始终发生冲突。 （在已知的例子中是在小表中保存连续整数的浮点键集。）因此我们应用一个向下扩展高位比特影响的变换。 在速度，效用和比特扩展质量之间存在权衡。 因为许多常见的哈希集合已经合理分布（因此不会受益于传播），并且因为我们使用树来处理容器中的大量冲突，所以我们只是以最便宜的方式对一些移位的位进行异或，以减少系统损失， 以及由于表格边界而包含最高位的影响，否则这些位将永远不会用于索引计算。
+通过位运算在hash值为2的16次幂的后会将hash值扩大。
+static final int hash(Object key) {
+    int h;
+    return (key == null) ? 0 : (h = key.hashCode()) ^ (h >>> 16);
+}
+
+```
+
+```java
+final V putVal(int hash, K key, V value, boolean onlyIfAbsent,
+               boolean evict) {
+    Node<K,V>[] tab; Node<K,V> p; int n, i;
+    if ((tab = table) == null || (n = tab.length) == 0)
+        n = (tab = resize()).length;
+    if ((p = tab[i = (n - 1) & hash]) == null)
+        tab[i] = newNode(hash, key, value, null);
+    else {
+        Node<K,V> e; K k;
+        if (p.hash == hash &&
+            ((k = p.key) == key || (key != null && key.equals(k))))
+            e = p;
+        else if (p instanceof TreeNode)
+            e = ((TreeNode<K,V>)p).putTreeVal(this, tab, hash, key, value);
+        else {
+            for (int binCount = 0; ; ++binCount) {
+                if ((e = p.next) == null) {
+                    p.next = newNode(hash, key, value, null);
+                    if (binCount >= TREEIFY_THRESHOLD - 1) // -1 for 1st
+                        treeifyBin(tab, hash);
+                    break;
+                }
+                if (e.hash == hash &&
+                    ((k = e.key) == key || (key != null && key.equals(k))))
+                    break;
+                p = e;
+            }
+        }
+        if (e != null) { // existing mapping for key
+            V oldValue = e.value;
+            if (!onlyIfAbsent || oldValue == null)
+                e.value = value;
+            afterNodeAccess(e);
+            return oldValue;
+        }
+    }
+    ++modCount;
+    if (++size > threshold)
+        resize();
+    afterNodeInsertion(evict);
+    return null;
+}
+```
+
+`put()`首先会重新计算key的hash值，目的是为了将key更加均匀的散列在数组中，防止有些位置永远不会被用于索引计算。在`putVal()`开始，先判断table数组是否为空或者长度为0。因为在之前的构造方法中，没有对table数组进行操作，所以此时table数组为空。会调用`resize()`方法：
+
+```java
+final Node<K,V>[] resize() {
+    Node<K,V>[] oldTab = table;
+    int oldCap = (oldTab == null) ? 0 : oldTab.length;
+    int oldThr = threshold;
+    int newCap, newThr = 0;
+    if (oldCap > 0) {
+        if (oldCap >= MAXIMUM_CAPACITY) {
+            threshold = Integer.MAX_VALUE;
+            return oldTab;
+        }
+        else if ((newCap = oldCap << 1) < MAXIMUM_CAPACITY &&
+                 oldCap >= DEFAULT_INITIAL_CAPACITY)
+            newThr = oldThr << 1; // double threshold
+    }
+    else if (oldThr > 0) // initial capacity was placed in threshold
+        newCap = oldThr;
+    else {               // zero initial threshold signifies using defaults
+        newCap = DEFAULT_INITIAL_CAPACITY;
+        newThr = (int)(DEFAULT_LOAD_FACTOR * DEFAULT_INITIAL_CAPACITY);
+    }
+    if (newThr == 0) {
+        float ft = (float)newCap * loadFactor;
+        newThr = (newCap < MAXIMUM_CAPACITY && ft < (float)MAXIMUM_CAPACITY ?
+                  (int)ft : Integer.MAX_VALUE);
+    }
+    threshold = newThr;
+    @SuppressWarnings({"rawtypes","unchecked"})
+    Node<K,V>[] newTab = (Node<K,V>[])new Node[newCap];
+    table = newTab;
+    if (oldTab != null) {
+      // 省略
+                }
+            }
+        }
+    }
+    return newTab;
+}
+```
+
+`resize()`方法的作用是：初始化或加倍表格大小。
+
+初始化：table数组为空，oldThr如果不为0则为设置的初始容量，所以讲oldThr赋值给newCap，也就是将table的数组长度确定为我们设置的大小。然后用设置的加载因子计算newThr并赋值给threshold，如果没设置初始容量，那么就会用默认的值去初始化数组和threshold。，在这里看出，table数组的初始化是延迟到第一次`put()`的时候进行的。并且threshold刚开始保存的是初始数组容量。
+
+接下来会创建一个新节点，并且根据新的容量创建新的数组。如果是第一次创建，则不需要将旧数组上的数据中心hash到新的数组上的过程直接返回。
+
+扩容:扩容的时候table长度大于0，数组容量和threshold都会进行二倍扩容。然后将旧数组上元素迁移到新数组上。分为三种情况：
+
+```  java
+//resize方法省略部分  
+for (int j = 0; j < oldCap; ++j) {
+            Node<K,V> e;
+            if ((e = oldTab[j]) != null) {
+                oldTab[j] = null;
+                if (e.next == null)
+                    newTab[e.hash & (newCap - 1)] = e;
+                else if (e instanceof TreeNode)
+                    ((TreeNode<K,V>)e).split(this, newTab, j, oldCap);
+                else { // preserve order
+                    Node<K,V> loHead = null, loTail = null;
+                    Node<K,V> hiHead = null, hiTail = null;
+                    Node<K,V> next;
+                    do {
+                        next = e.next;
+                        if ((e.hash & oldCap) == 0) {
+                            if (loTail == null)
+                                loHead = e;
+                            else
+                                loTail.next = e;
+                            loTail = e;
+                        }
+                        else {
+                            if (hiTail == null)
+                                hiHead = e;
+                            else
+                                hiTail.next = e;
+                            hiTail = e;
+                        }
+                    } while ((e = next) != null);
+                    if (loTail != null) {
+                        loTail.next = null;
+                        newTab[j] = loHead;
+                    }
+                    if (hiTail != null) {
+                        hiTail.next = null;
+                        newTab[j + oldCap] = hiHead;
+                    }
+```
+
+​	
+
+只有一个节点：会被重新hash（e.hash & (newCap - 1)）,新位置有两种情况，hash到原位置，2次幂的偏移量hash到新的位置。
+
+链表：当索引位置是链表的时候。分为三种情况：
+
+1. 元素在旧数组上hash后的索引位置为0，这种情况出现于 `（key.hashCode=oldCap）*n+n & oldCap`这种情况，会被重新分配在新数组相对于旧数组相同的位置上。
+2. 元素在旧数组上索引位置不为0，会被重新分配在旧数组位置+oldCap的新位置。
+3.  原来在hash在0索引位置的Node的key值，被修改后重新hash不在0索引位置，和原来hash不在0索引位置的Node重新hash后在0索引位置。
+
+```java
+Node<K,V> loHead = null, loTail = null;
+Node<K,V> hiHead = null, hiTail = null;
+```
+
+为了将链表中心分配在新数组，声明了四个变量。loHead,loTail对应第一种情况，hiHead，hiTail对应第二种情况。
+
+前两情框，lo/hiTail节点只是向后移动,第三种情况以图片为例：
+
+![](https://github.com/TransientWang/KnowledgeBase/blob/master/picture/HashMap_resize().png)
+
+- `e节点`是链表的首节点，也是当前节点。它的hash在索引0的位置。这时候`loHead`,`loTail`都被赋值`e`。
+- 然后`e节点`后面`f节点`成为新的当前节点。此时`loHead.next`、`loTail.next`都指向g。
+- `f节点`重新hash在索引1的位置。hiHead,hiTail被赋值为f，成为一条新链表的首节点。此时`hiHead.next`、`hiTail.next`都指向`g`。
+- 接下来`g`又成为了新的当前节点。
+- `g`重新hash到0的位置，此时`loTail`=`e`，`loTail.next`指向当前节点`g`。并将`loTaol`移动到当前节点`g`。这样就略过了`f节点`。
+
+* 当循环结束时候进行两次判断，第一次将索引在0位置的新链表的loTail置空，放置在新数组相对于旧数组的相同位置j,第二次将索引在1位置的新链表Tail置空，注意，之前`hiHead`,`hiTail`的下一节点都指向`f`。如果不将尾部断开会形成二叉树，这是错误的。
+
