@@ -35,7 +35,7 @@ public class IdentityHashMap<K,V> extends AbstractMap<K,V>
 
 ### 字段
 
-```
+```java
 /**
  * 无参构造函数使用的初始容量.
  * 必须是二的次幂. 在给定载荷因子为2/3的情况下，值32对应于（指定的）预期最   *大元素数量21。
@@ -57,9 +57,14 @@ private static final int MINIMUM_CAPACITY = 4;
  */
 private static final int MAXIMUM_CAPACITY = 1 << 29;
 
+/**
+ * 表示表内的空键的值.
+ */
+static final Object NULL_KEY = new Object();
+
 ```
 
-IdentityHashMap的初始容量为32，默认最小期望值为4。
+IdentityHashMap的初始容量为32，默认最小期望值为4。NULL_KEY帮住区分null带不代表key。
 
 ## 分析 
 
@@ -82,12 +87,8 @@ private static int capacity(int expectedMaxSize) {
 }
 ```
 
-```
+```java
 private void init(int initCapacity) {
-    // assert (initCapacity & -initCapacity) == initCapacity; // power of 2
-    // assert initCapacity >= MINIMUM_CAPACITY;
-    // assert initCapacity <= MAXIMUM_CAPACITY;
-
     table = new Object[2 * initCapacity];
 }
 ```
@@ -163,7 +164,7 @@ private boolean resize(int newCapacity) {
 
 IdentityHashMap只用数组存储元素。所以扩容阈值较小。put方法的扩容判断是`s + (s << 1) > len`这句话，如果元素数量达到容量的三分之一就要进行扩容操作，新数组长度是旧数组长度的二倍。`retryAfterResize`是java里的`goto`在扩容完成前进行自旋。
 
-```
+```java
 private static int nextKeyIndex(int i, int len) {
     return (i + 2 < len ? i + 2 : 0);
 }
