@@ -59,4 +59,124 @@ private static final int MAXIMUM_CAPACITY = 1 << 29;
 
 ```
 
-IdentityHashMap的初始容量为32
+IdentityHashMap的初始容量为32，默认最小期望值为4。
+
+## 分析 
+
+```java
+public IdentityHashMap(int expectedMaxSize) {
+    if (expectedMaxSize < 0)
+        throw new IllegalArgumentException("expectedMaxSize is negative: "
+                                           + expectedMaxSize);
+    init(capacity(expectedMaxSize));
+}
+```
+
+```java
+private static int capacity(int expectedMaxSize) {
+    // assert expectedMaxSize >= 0;
+    return
+        (expectedMaxSize > MAXIMUM_CAPACITY / 3) ? MAXIMUM_CAPACITY :
+        (expectedMaxSize <= 2 * MINIMUM_CAPACITY / 3) ? MINIMUM_CAPACITY :
+        Integer.highestOneBit(expectedMaxSize + (expectedMaxSize << 1));
+}
+```
+
+```
+private void init(int initCapacity) {
+    // assert (initCapacity & -initCapacity) == initCapacity; // power of 2
+    // assert initCapacity >= MINIMUM_CAPACITY;
+    // assert initCapacity <= MAXIMUM_CAPACITY;
+
+    table = new Object[2 * initCapacity];
+}
+```
+
+初始化过程将数组长度初始化为，最接近expectedMaxSize二倍的2次幂数*2。如果是8的话就返回32，7也返回32。
+
+```java
+public V put(K key, V value) {
+    final Object k = maskNull(key);
+
+    retryAfterResize: for (;;) {
+        final Object[] tab = table;
+        final int len = tab.length;
+        int i = hash(k, len);
+
+        for (Object item; (item = tab[i]) != null;
+             i = nextKeyIndex(i, len)) {
+            if (item == k) {
+                @SuppressWarnings("unchecked")
+                    V oldValue = (V) tab[i + 1];
+                tab[i + 1] = value;
+                return oldValue;
+            }
+        }
+
+        final int s = size + 1;
+        // Use optimized form of 3 * s.
+        // Next capacity is len, 2 * current capacity.
+        if (s + (s << 1) > len && resize(len))
+            continue retryAfterResize;
+
+        modCount++;
+        tab[i] = k;
+        tab[i + 1] = value;
+        size = s;
+        return null;
+    }
+}
+```
+
+```java
+private boolean resize(int newCapacity) {
+    int newLength = newCapacity * 2;
+    Object[] oldTable = table;
+    int oldLength = oldTable.length;
+    if (oldLength == 2 * MAXIMUM_CAPACITY) { // can't expand any further
+        if (size == MAXIMUM_CAPACITY - 1)
+            throw new IllegalStateException("Capacity exhausted.");
+        return false;
+    }
+    if (oldLength >= newLength)
+        return false;
+
+    Object[] newTable = new Object[newLength];
+
+    for (int j = 0; j < oldLength; j += 2) {
+        Object key = oldTable[j];
+        if (key != null) {
+            Object value = oldTable[j+1];
+            oldTable[j] = null;
+            oldTable[j+1] = null;
+            int i = hash(key, newLength);
+            while (newTable[i] != null)
+                i = nextKeyIndex(i, newLength);
+            newTable[i] = key;
+            newTable[i + 1] = value;
+        }
+    }
+    table = newTable;
+    return true;
+}
+```
+
+IdentityHashMap只用数组存储元素。所以扩容阈值较小。put方法的扩容判断是`s + (s << 1) > len`这句话，如果元素数量达到容量的三分之一就要进行扩容操作，新数组长度是旧数组长度的二倍。`retryAfterResize`是java里的`goto`在扩容完成前进行自旋。
+
+```
+private static int nextKeyIndex(int i, int len) {
+    return (i + 2 < len ? i + 2 : 0);
+}
+```
+
+在插入元素时每次跳跃2个索引位置。
+
+
+
+判断key相等的时候直接用 `==`判断。如果希望获取到字段值全部相等的两个对象的时候， 就可以使用此类。以为该类只判断地址是否相等。
+
+
+
+### 总结
+
+IdentityHashMap比较特殊，通过`hash`和`==`来获取key。所有元素只存储在数组中，没有HashMap中ucket的概念。并且构造方法里面的期望值参数，也不是数组的初始值。而是扩大的四倍的2次幂数。
