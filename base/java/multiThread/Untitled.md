@@ -1,6 +1,6 @@
 ## 创建线程的几种方式
 
-1. 继承[Thread类] (https://github.com/TransientWang/KnowledgeBase/blob/master/base/java/multiThread/Thread.md)，实现run()方法并调用Thread类的start()方法。
+1. 继承[Thread类] ( https://github.com/TransientWang/KnowledgeBase/blob/master/base/java/multiThread/Thread.md )，实现run()方法并调用Thread类的start()方法。
 
 2. 实现[Runnable接口][https://github.com/TransientWang/KnowledgeBase/blob/master/base/java/multiThread/Runnable.md]，实现run()方法，将Runnable接口传递给Thread类，然后调用start()。
 
