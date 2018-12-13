@@ -317,7 +317,7 @@ public boolean isInterrupted() {
 }
 ```
 
-而isInterrupted()则是测试该线程是否已被中断，并且清楚线程的中断状态。也就是说如果连续两次调用次方法，第二次会返回false。
+而isInterrupted()则是测试该线程是否已被中断，并且清除楚线程的中断状态。也就是说如果连续两次调用次方法，第二次会返回false。
 
 ```java
 public static int enumerate(Thread tarray[]) {
