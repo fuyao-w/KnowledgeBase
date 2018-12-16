@@ -178,4 +178,159 @@ public abstract class AbstractQueuedSynchronizer
  }
 ```
 
- 
+ ### Node
+
+等待队列节点类。
+等待队列是“CLH”（Craig，Landin和Hagersten）锁定队列的变体。 CLH锁通常用于自旋锁。我们使用它们来阻止同步器，但是使用相同的基本策略来保存关于其节点的前驱中的线程的一些控制信息。每个节点中的“状态”字段跟踪线程是否阻塞。在其前驱发布时，将发出节点信号。否则队列的每个节点都用作持有单个等待线程的特定通知样式监视器。状态字段不控制线程是否是按钮锁等。线程可能会尝试获取它是否在队列中的第一个。但首先并不能保证成功;它只给予抗争的权利。因此，当前发布的竞争者线程可能需要重新审视。
+要排入CLH锁定，您将其原子拼接为新的
+ 尾巴。要出列，您只需设置头部字段即可。
+
+```
+      +------+  prev +-----+       +-----+
+ head |      | <---- |     | <---- |     |  tail
+      +------+       +-----+       +-----+
+```
+
+插入CLH队列只需要对“尾部”进行单个原子操作，因此存在从未排队到排队的简单原子点划分。同样，出列只涉及更新“头部”。但是，节点需要更多的工作来确定他们的继任者是谁，部分是为了处理由于超时和中断而可能的取消。
+“prev”链接（未在原始CLH锁中使用）主要用于处理取消。如果节点被取消，则其后继者（通常）重新链接到未取消的前驱。有关自旋锁的类似机制的解释，请参阅Scott和Scherer的论文
+我们还使用“next”链接来实现阻塞机制。每个节点的线程ID保存在自己的节点中，因此前驱者通过遍历下一个链接来通知下一个节点，以确定它是哪个线程。后继者的确定必须避免使用新排队节点的比赛来设置其前驱的“下一个”字段。必要时，当节点的后继者看起来为空时，通过从原子更新的“尾部”向后检查来解决这个问题。 （或者，换句话说，下一个链接是一个优化，所以我们通常不需要后向扫描。）
+ 取消为基本算法引入了一些保守性。由于我们必须轮询取消其他节点，我们可能会忽略被取消的节点是在我们前面还是在我们后面。这是通过取消后始终取消停车的继承人来处理的，这使得他们能够稳定在新的前驱上，除非我们能够确定一位将承担此责任的未经撤销的前驱。
+CLH队列需要一个虚拟标头节点才能启动。但是我们不会在构造上创建它们，因为如果没有争用就会浪费精力。相反，构造节点并在第一次争用时设置头尾指针。
+ 等待条件的线程使用相同的节点，但使用其他链接。条件只需要链接简单（非并发）链接队列中的节点，因为它们仅在完全保持时才被访问。等待时，将节点插入条件队列。根据信号，节点被转移到主队列。状态字段的特殊值用于标记节点所在的队列。
+ 感谢Dave Dice，Mark Moir，Victor Luchangco，Bill Scherer和Michael Scott以及JSR-166专家组成员对本课程设计的有益想法，讨论和批评。
+
+```java
+static final class Node {
+    /** 标记表示节点正在共享模式中等待 */
+    static final Node SHARED = new Node();
+    /** 标记表示节点正在独占模式下等待 */
+    static final Node EXCLUSIVE = null;
+
+    /** waitStatus值表示线程已取消。 */
+    static final int CANCELLED =  1;
+    /** waitStatus值表示后继者的线程需要unparking。 */
+    static final int SIGNAL    = -1;
+    /**waitStatus值表示线程正在等待条件。 */
+    static final int CONDITION = -2;
+    /**
+     * waitStatus值表示下一个acquireShared应无条件传播。
+     */
+    static final int PROPAGATE = -3;
+
+    /**
+     * 状态字段，仅接受值：
+     *   SIGNAL:    此节点的后继是（或将很快）被阻塞（通过park），因此当前节点在释放或取消时必须取消其后继。
+     *   为了避免竞争，获取方法必须首先指示它们需要信号，然后重试原子获取，然后在失败时阻止。
+     *   CANCELLED:  由于超时或中断，此节点被取消。 节点永远不会离开这个状态。 
+     *               特别是，具有已取消节点的线程永远不会再次阻塞。
+     *   CONDITION:  此节点当前处于条件队列中。 在传输之前，它不会用作同步队列节点，此时状态将设置为0.
+     *               （此处使用此值与字段的其他用法无关，但可简化机制。）
+     *   PROPAGATE:  releaseShared应该传播到其他节点。 在doReleaseShared中设置（仅限头节点）
+     *               以确保继续传播，即使其他操作已经介入。
+     *   0:          以上都不是
+     *
+     * 数值以数字方式排列以简化使用。 非负值意味着节点不需要发信号。 
+     * 因此，大多数代码不需要检查特定值，仅用于符号。
+     *
+     * 对于正常的同步节点，该字段初始化为0，对于条件节点，该字段初始化为CONDITION。
+     * 它使用CAS（或可能的情况下，无条件的易失性写入）进行修改。
+     */
+    volatile int waitStatus;
+
+    /**
+     * 链接到当前节点/线程依赖的前导节点以检查waitStatus。 在排队期间分配，并且仅在出列时才被排除（为了GC）。 此外，在取消前驱时，我们在找到未取消的一个时短路，这将永远存在，因为头节点永远不会被取消：节点由于成功获取而变为仅头。
+      * 取消的线程永远不会成功获取，并且线程仅取消自身，而不取消任何其他节点。
+     */
+    volatile Node prev;
+
+    /**
+     * 链接到当前节点/线程在释放时取消驻留的后继节点。 
+     * 在排队期间分配，在绕过取消的前驱时进行调整，并在出列时排除（为了GC）。 
+     * enq操作直到附加后才分配前驱的next字段，因此看到next字段为null并不一定意味着该节点位
+     * 于队列的末尾。 但是，如果下一个字段看起来为空，我们可以从尾部扫描prev's进行仔细检查。 
+     * 已取消节点的下一个字段设置为指向节点本身而不是null，以使isOnSyncQueue的生活更轻松。
+     */
+    volatile Node next;
+
+    /**
+     * 排队此节点的线程。 在构造时化并在使用后消失。
+     */
+    volatile Thread thread;
+
+    /**
+     * 链接到等待条件的下一个节点，或特殊值SHARED。
+     * 因为条件队列只有在保持独占模式时才被访问，所以我们只需要一个简单的链接队列来在节点
+     * 等待条件时保存节点。 然后将它们转移到队列中以重新获取。 
+     * 并且因为条件只能是独占的，所以我们通过使用特殊值来指示共享模式来保存字段。
+     */
+    Node nextWaiter;
+
+    /**
+     * 如果节点在共享模式下等待，则返回true。
+     */
+    final boolean isShared() {
+        return nextWaiter == SHARED;
+    }
+
+    /**
+     * 返回上一个节点，如果为null则抛出NullPointerException。 
+     * 在前驱不能为null时使用。 可以省略空检查，但检查其可以帮助VM。
+     *
+     * @return 此节点的前驱
+     */
+    final Node predecessor() {
+        Node p = prev;
+        if (p == null)
+            throw new NullPointerException();
+        else
+            return p;
+    }
+
+    /** 建立初始头或SHARED标记。 */
+    Node() {}
+
+    /** addWaiter使用的构造函数。 */
+    Node(Node nextWaiter) {
+        this.nextWaiter = nextWaiter;
+        THREAD.set(this, Thread.currentThread());
+    }
+
+    /** addConditionWaiter使用的构造方法。 */
+    Node(int waitStatus) {
+        WAITSTATUS.set(this, waitStatus);
+        THREAD.set(this, Thread.currentThread());
+    }
+
+    /** CASes waitStatus field. */
+    final boolean compareAndSetWaitStatus(int expect, int update) {
+        return WAITSTATUS.compareAndSet(this, expect, update);
+    }
+
+    /** CASes next field. */
+    final boolean compareAndSetNext(Node expect, Node update) {
+        return NEXT.compareAndSet(this, expect, update);
+    }
+
+    final void setPrevRelaxed(Node p) {
+        PREV.set(this, p);
+    }
+
+    // VarHandle mechanics
+    private static final VarHandle NEXT;
+    private static final VarHandle PREV;
+    private static final VarHandle THREAD;
+    private static final VarHandle WAITSTATUS;
+    static {
+        try {
+            MethodHandles.Lookup l = MethodHandles.lookup();
+            NEXT = l.findVarHandle(Node.class, "next", Node.class);
+            PREV = l.findVarHandle(Node.class, "prev", Node.class);
+            THREAD = l.findVarHandle(Node.class, "thread", Thread.class);
+            WAITSTATUS = l.findVarHandle(Node.class, "waitStatus", int.class);
+        } catch (ReflectiveOperationException e) {
+            throw new ExceptionInInitializerError(e);
+        }
+    }
+}
+```
+
