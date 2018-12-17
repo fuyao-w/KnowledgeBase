@@ -1,6 +1,83 @@
 #  AbstractQueuedSynchronizer
 
-AbstractQueuedSynchronizer是jdk实现锁的基础框架，对于锁的理解非常重要。
+AbstractQueuedSynchronizer是jdk实现锁的基础框架，对于juc包的理解非常重要。
+同时AQS的实现为CLH锁的变体。了解CLH锁也至关重要。
+
+## CLH
+
+![CLH锁状态转换](https://github.com/TransientWang/KnowledgeBase/blob/master/picture/CLH锁.png.md)
+
+```java
+
+public abstract class CLHAbslock implements Lock {
+    //保存尾部节点的引用，便于将新节点添加到节点尾部
+    AtomicReference<Node> tail; 
+    //当前线程所持有的节点
+    ThreadLocal<Node> curNode;
+    //帮助回收节点
+    ThreadLocal<Node> preNode;
+
+
+    public CLHAbslock() {
+        tail = new AtomicReference<Node>(new Node());
+        this.curNode = new ThreadLocal<Node>() {
+            @Override
+            protected Node initialValue() {
+                return new Node();
+            }
+        };
+        this.preNode = new ThreadLocal<>();
+
+    }
+
+    class Node {
+        volatile AtomicBoolean locked = new AtomicBoolean();
+    }
+```
+
+我们现在将注意力转向不同类型的队列锁定。上面的代码显示了CLHLock类的字段，构造函数和Node类。此类在Node对象中记录每个线程的状态，该对象具有布尔锁定字段。如果该字段是true，那么相应的线程已获得锁定，或者正在等待锁定。如果该字段为false，则该线程已释放锁定。锁本身表示为Node对象的虚拟链表。我们使用术语“虚拟”，因为列表是隐式的：每个线程通过线程局部pred变量引用其前任。公共尾部字段是最近添加到队列的节点的AtomicReference <Node>。如图7.10所示，为了获取锁，线程将其Node的锁定字段设置为true，表明该线程不是准备释放锁。该线程将getAndSet（）应用于尾部字段，以使其自己的节点成为队列的尾部，同时获取对其前任的Node的引用。然后该线程在前任的锁定字段上旋转，直到前任释放锁。要释放锁定，线程会将其节点的锁定字段设置为false。**然后它重新使用其前驱的Node作为未来锁访问的新节点。它可以这样做，因为此时线程的前驱Node不再被前驱使用，并且线程持有的Node可以由线程的后继者和尾部引用。虽然我们在示例中没有这样做，但它是可能的回收节点**，以便如果有Llocks，并且每个线程一次最多访问一个锁，那么CLHLock类只需要O（L + n）空间，而不是ALock类的O（Ln）。图7.11显示了一个典型的CLHLock执行。当一个线程释放它的锁时，它只使其后继的缓存无效。它提供先到先得的公平性。也许这种锁定算法的唯一缺点是它在无缓存的NUMA体系结构上表现不佳。每个线程都会自旋，等待其前置节点的锁定字段变为false。如果此内存位置是远程的，则性能会受到影响。但是，在缓存一致的体系结构中，这种方法应该可以正常工作。
+
+```java
+public class CLHLock extends CLHAbslock {
+    @Override
+    public void lock() {
+        //获取当前线程所持有的节点
+        Node node = curNode.get();
+        node.locked.set(true);
+        //将当前节点添加到tail
+        Node pre = tail.getAndSet(node);
+        //保存当前节点的前驱节点
+        preNode.set(pre);
+        while (pre.locked.get());
+
+    }
+
+   /**
+     * @date 2018/12/17 21:30
+     * @return void
+     * @Description 当前线程解锁后，当前线程前驱节点就不会再被引用。而当前线程所持有的节点会被后继和尾节点引用。
+     * 而在解锁后前驱节点和当前线程持有节点的状态是一样的，所以当前节点完全可以被前驱节点所替换，
+     * 当前节点将被JVM回收，也可以不这么做。
+     * @Param []
+     **/
+    @Override
+    public void unlock() {
+        Node node = curNode.get();
+        node.locked.set(false);
+        //将当前节点替换为前驱节点，帮助JVM回收当前线程持有的节点
+        curNode.set(preNode.get());
+    }
+}
+```
+
+CLHLockclass：锁定获取和释放。 最初，尾部字段指的是其锁定字段为假的QNode。 ThreadAthen将getAndSet（）应用于尾部字段，以将其QNode插入队列的尾部，同时获取对其前任的QNode的引用。 接下来，Bdoes相同，将其QNode插入队列的尾部。然后通过将其节点的锁定字段设置为false来释放锁定。 然后它会回收pred引用的QNode，以便将来锁定访问。
+
+
+
+
+
+
+
 
 ## AbstractOwnableSynchronizer
 
