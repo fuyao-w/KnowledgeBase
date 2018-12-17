@@ -5,7 +5,7 @@ AbstractQueuedSynchronizer是jdk实现锁的基础框架，对于juc包的理解
 
 ## CLH
 
-![CLH锁状态转换](https://github.com/TransientWang/KnowledgeBase/blob/master/picture/CLH锁.png.md)
+![CLH锁状态转换](https://github.com/TransientWang/KnowledgeBase/blob/master/picture/CLH锁.png)
 
 ```java
 
