@@ -1,5 +1,3 @@
-#  AbstractQueuedSynchronizer
-
 AbstractQueuedSynchronizer是jdk实现锁的基础框架，对于juc包的理解非常重要。
 同时AQS的实现为CLH锁的变体。了解CLH锁也至关重要。
 
@@ -640,5 +638,91 @@ private void cancelAcquire(Node node) {
 
 ## condition
 
+```java
+public interface Condition 
+```
 
+条件因素将Object监视器方法（wait，notify和notifyAll）分解为不同的对象，以通过将它们与使用任意Lock实现相结合来实现每个对象具有多个等待集的效果。如果Lock替换了synchronized方法和语句的使用，则Condition将替换Object监视方法的使用。
+条件（也称为条件队列或条件变量）为一个线程提供暂停执行（“等待”）的手段，直到另一个线程通知某个状态条件现在可能为真。由于对此共享状态信息的访问发生在不同的线程中，因此必须对其进行保护，因此某种形式的锁定与Condition相关联。等待条件提供的关键属性是它以原子方式释放关联的锁并挂起当前线程，就像Object.wait一样。
+
+Condition实例本质上绑定到锁。要获取特定Lock实例的Condition实例，请使用其newCondition（）方法。
+
+举个例子，假设我们有一个有界缓冲区，它支持put和take方法。如果在空缓冲区上尝试获取，则该线程将阻塞，直到某个项可用为止;如果在完整缓冲区上尝试放置，则线程将阻塞，直到空间可用。我们希望继续等待put线程并将线程放在单独的等待集中，以便我们可以使用仅在缓冲区中的项或空间可用时通知单个线程的优化。这可以使用两个Condition实例来实现。
+
+```java
+ class BoundedBuffer<E> {
+   final Lock lock = new ReentrantLock();
+   final Condition notFull  = lock.newCondition(); 
+   final Condition notEmpty = lock.newCondition(); 
+
+   final Object[] items = new Object[100];
+   int putptr, takeptr, count;
+
+   public void put(E x) throws InterruptedException {
+     lock.lock();
+     try {
+       while (count == items.length)
+         notFull.await();
+       items[putptr] = x;
+       if (++putptr == items.length) putptr = 0;
+       ++count;
+       notEmpty.signal();
+     } finally {
+       lock.unlock();
+     }
+   }
+
+   public E take() throws InterruptedException {
+     lock.lock();
+     try {
+       while (count == 0)
+         notEmpty.await();
+       E x = (E) items[takeptr];
+       if (++takeptr == items.length) takeptr = 0;
+       --count;
+       notFull.signal();
+       return x;
+     } finally {
+       lock.unlock();
+     }
+   }
+ }
+```
+
+（ArrayBlockingQueue类提供此功能，因此没有理由实现此示例用法类。）
+Condition实现可以提	供与Object监视器方法不同的行为和语义，例如保证通知排序，或者在执行通知时不需要保持锁定。如果实现提供了这样的专用语义，那么实现必须记录那些语义。
+
+要注意的是`Condition`实例只是普通的对象，其本身作为一个目标`synchronized`语句，可以有自己的监视器`wait`和`notification`方法调用。  获取`Condition`实例的监视器锁或使用其监视方法与获取与该Condition相关联的`Condition`或使用其waiting和signalling方法没有特定关系。  建议为避免混淆，您永远不会以这种方式使用`Condition`实例，除了可能在自己的实现之内。 
+
+除非另有说明，否则为任何参数传递null值将导致抛出NullPointerException。
+
+实施注意事项:
+
+当等待`Condition`时，允许发生“ *虚假唤醒*  ”，一般来说，作为对底层平台语义的让步。  这对大多数应用程序几乎没有实际的影响，因为`Condition`应该始终在循环中等待，测试正在等待的状态谓词。  一个实现可以免除虚假唤醒的可能性，但建议应用程序员总是假定它们可以发生，因此总是等待循环。 
+
+条件等待（可中断，不可中断和定时）的三种形式在一些平台上的易用性和性能特征可能不同。  特别地，可能难以提供这些特征并保持特定的语义，例如排序保证。  此外，中断线程实际挂起的能力可能并不总是在所有平台上实现。 
+
+因此，不需要一个实现来为所有三种形式的等待定义完全相同的保证或语义，也不需要支持中断线程的实际暂停。 
+
+需要一个实现来清楚地记录每个等待方法提供的语义和保证，并且当一个实现确实支持线程挂起中断时，它必须遵守该接口中定义的中断语义。  
+
+由于中断通常意味着取消，并且检查中断通常是不频繁的，所以实现可以有利于通过正常方法返回来响应中断。  即使可以显示中断发生在另一个可能解除阻塞线程的动作之后，这一点也是如此。 一个实现应该记录这个行为。 
+
+### 分析
+
+Condition与锁一起使用，效果与wait相似，提供线程间通信的方法：
+
+```java
+boolean await(long time, TimeUnit unit) throws InterruptedException;
+```
+
+```java
+void signal();
+```
+
+## ConditionObject
+
+```java
+public class ConditionObject implements Condition, java.io.Serializable 
+```
 
