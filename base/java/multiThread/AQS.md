@@ -607,7 +607,7 @@ private void cancelAcquire(Node node) {
     while (pred.waitStatus > 0)
         node.prev = pred = pred.prev;
 
-    // predNext是不明显的明显节点。 如果没有，下面的情况将失败，在这种情况下，我们失去了比赛与另一个取消或信号，所以不需要进一步的行动，尽管有可能被取消的节点可能暂时保持可达。
+    // predNext是不明显的明显节点。 如果没有，下面的情况将失败，在这种情况下，我们失去了竞争与另一个取消或信号，所以不需要进一步的行动，尽管有可能被取消的节点可能暂时保持可达。
     Node predNext = pred.next;
 
     // 可以在这里使用无条件写入而不是CAS。 在此原子步骤之后，其他节点可以跳过我们。 之前，我们不受其他线程的干扰。
@@ -636,56 +636,9 @@ private void cancelAcquire(Node node) {
 }
 ```
 
-#### 共享模式获取锁
+取消节点的时候，会将当前线程持有的节点的Thread字段置为空。将本节点的waitStatus设置为`Node.CANCELLED`。如果本节点就是尾节点，那么直接删除本节点就可以。如果本节点是头节点，那么直接取消后继节点的阻塞状态就可以。如果不是头尾节点，则将非取消状态的前驱强制变成signal状态，然后链接到当前节点的后继。
 
-```java
-public final void acquireShared(int arg) {
-    if (tryAcquireShared(arg) < 0)
-        doAcquireShared(arg);
-}
-```
+## condition
 
-```java
-private void doAcquireShared(int arg) {
-    final Node node = addWaiter(Node.SHARED);
-    boolean interrupted = false;
-    try {
-        for (;;) {
-            final Node p = node.predecessor();
-            if (p == head) {
-                int r = tryAcquireShared(arg);
-                if (r >= 0) {
-                    setHeadAndPropagate(node, r);
-                    p.next = null; // help GC
-                    return;
-                }
-            }
-            if (shouldParkAfterFailedAcquire(p, node))
-                interrupted |= parkAndCheckInterrupt();
-        }
-    } catch (Throwable t) {
-        cancelAcquire(node);
-        throw t;
-    } finally {
-        if (interrupted)
-            selfInterrupt();
-    }
-}
-```
 
-```java
-private void setHeadAndPropagate(Node node, int propagate) {
-    Node h = head; // 记录下方检查旧头部
-    setHead(node);
-    /*
-    如果以下情况尝试发信号通知下一个排队节点：
-    传播由调用者指示，或者由前一个操作记录（在setHead之前或之后为h.waitStatus）（注意：这使用waitStatus的符号检查，因为PROPAGATE状态可能转换为SIGNAL。 并且下一个节点正在共享模式中等待，或者我们不知道，因为它看起来是空的这两个检查中的保守性可能会导致不必要的唤醒，但只有当有多个竞争获取/释放时，所以大多数需要 无论如何现在或很快发出信号。
-     */
-    if (propagate > 0 || h == null || h.waitStatus < 0 ||
-        (h = head) == null || h.waitStatus < 0) {
-        Node s = node.next;
-        if (s == null || s.isShared())
-            doReleaseShared();
-    }
-}
-```
+
