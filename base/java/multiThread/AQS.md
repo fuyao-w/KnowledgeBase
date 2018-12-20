@@ -1,5 +1,5 @@
 AbstractQueuedSynchronizer是jdk实现锁的基础框架，对于juc包的理解非常重要。
-同时AQS的实现为CLH锁的变体。了解CLH锁也至关重要。
+同时AQS的实现为CLH锁的变体。了解CLH锁也至关重要。直接在`AbstractQueuedSynchronizer`中了解所有的方法用途不会很容易，所以这里，只介绍与AQS类相关的CLH锁和AQS的基本`acquire`、`release`方法与Condition,其他的方法通过应用AQS的类来分析。
 
 ## CLH
 
@@ -306,16 +306,16 @@ static final class Node {
     volatile int waitStatus;
 
     /**
-     * 链接到当前节点/线程依赖的前导节点以检查waitStatus。 在排队期间分配，并且仅在出列时才被排除（为了GC）。 此外，在取消前驱时，我们在找到未取消的一个时短路，这将永远存在，因为头节点永远不会被取消：节点由于成功获取而变为仅头。
-      * 取消的线程永远不会成功获取，并且线程仅取消自身，而不取消任何其他节点。
+     * 链接到当前节点/线程依赖的前驱节点以检查waitStatus。 在排队期间分配，并且仅在出列时才被排除（为了GC）。 此外，在取消前驱时，我们在找到未取消的一个时短路，这将永远存在，因为头节点永远不会被取消：节点由于成功获取而变为头结点。
+      * 取消的线程永远不会再成功获取，并且线程仅取消自身，而不取消任何其他节点。
      */
     volatile Node prev;
 
     /**
      * 链接到当前节点/线程在释放时取消驻留的后继节点。 
      * 在排队期间分配，在绕过取消的前驱时进行调整，并在出列时排除（为了GC）。 
-     * enq操作直到附加后才分配前驱的next字段，因此看到next字段为null并不一定意味着该节点位于队列的末尾。 但是，如果下一个字段看起来为空，我们可以从尾部扫描prev's进行仔细检查。 
-     * 已取消节点的下一个字段设置为指向节点本身而不是null，以使isOnSyncQueue的生活更轻松。
+     * enq操作直到附加后才分配前驱的next字段，因此看到next字段为null并不一定意味着该节点一定位于队列的末尾。 但是，如果next字段看起来为空，我们可以从尾部扫描prev进行仔细检查。 
+     * 已取消节点的下一个字段设置为指向节点本身而不是null，让isOnSyncQueue的判断更容易。
      */
     volatile Node next;
 
@@ -325,10 +325,10 @@ static final class Node {
     volatile Thread thread;
 
     /**
-     * 链接到等待条件的下一个节点，或特殊值SHARED。
+     * 链接到condition的wait队列的下一个节点，或特殊值SHARED。
      * 因为条件队列只有在保持独占模式时才被访问，所以我们只需要一个简单的链接队列来在节点
-     * 等待条件时保存节点。 然后将它们转移到队列中以重新获取。 
-     * 并且因为条件只能是独占的，所以我们通过使用特殊值来指示共享模式来保存字段。
+     * 等待条件时保存节点。 然后将它们转移到队列中以尝试重新获取锁。 
+     * 并且因为condition只能是独占的，所以我们通过使用特殊值来指示共享模式来保存字段。
      */
     Node nextWaiter;
 
@@ -543,7 +543,7 @@ private static boolean shouldParkAfterFailedAcquire(Node pred, Node node) {
 }
 ```
 
-如果前驱节点的waitStatus== Node.SIGNAL(-1)，则说明之前已经有线程占用了锁。当前节点应该阻塞等待前面的节点唤醒，如果waitStatus > 0 说明前驱节点已经取消，那么可以继续向前遍历到。waitStatus小于0的节点。否则waitStatus就一定为0或者-3，说明前驱已经有节点占用所或者前驱状态为PROPAGATE。应当将前驱节点waitStatus设为SIGNAL（-1）。这样在下次循环时候当前线程就会被阻塞以等待前驱放弃锁。并将当前线程设置为中断状态。
+如果前驱节点的waitStatus== Node.SIGNAL(-1)，则说明之前已经有线程占用了锁。当前节点应该阻塞等待前面的节点唤醒，如果waitStatus > 0 说明前驱节点已经取消，那么可以继续向前遍历到。waitStatus小于0的节点。否则waitStatus就一定为0或者-3，说明前驱已经有节点占用所或者前驱状态为PROPAGATE。应当将前驱节点waitStatus设为SIGNAL（-1）。这样在下次循环时候当前线程就会被阻塞以等待前驱放弃锁。并将当前线程设置为中断状态。（在重入锁中，获取锁的时候自旋两次就会被park）
 
 #### 释放锁
 
@@ -716,9 +716,29 @@ Condition与锁一起使用，效果与wait相似，提供线程间通信的方�
 boolean await(long time, TimeUnit unit) throws InterruptedException;
 ```
 
+`await`导致当前线程等待，直到发出**`signal`或中断**为止。
+与此条件关联的锁被原子释放，并且当前线程因线程调度而被禁用，并处于休眠状态，直到发生以下四种情况之一：
+
+- 一些其他线程为此Condition调用signal（）方法，并且当前线程恰好被选为要被唤醒的线程; 
+- 其他一些线程为此Condition调用signalAll（）方法; 
+- 其他一些线程会中断当前线程，并支持线程挂起中断; 
+- 发生“虚假唤醒”。
+
+在所有情况下，在此方法返回之前，当前线程必须重新获取与此条件关联的锁。 当线程返回时，保证保持此锁定。
+
+如果当前线程：
+
+- 在进入此方法时设置其中断状态; 
+- 等待时中断并支持线程挂起中断，
+
+然后抛出InterruptedException并清除当前线程的中断状态。 在第一种情况下，未指定在释放锁之前是否发生中断测试。
+
 ```java
-void signal();
+void signal();	
 ```
+
+`signal`唤醒一个等待线程。
+如果有任何线程在这种情况下等待，则选择一个线程进行唤醒。 然后该线程必须在从await返回之前重新获取锁。
 
 ## ConditionObject
 
@@ -726,3 +746,217 @@ void signal();
 public class ConditionObject implements Condition, java.io.Serializable 
 ```
 
+## 字段
+
+```java
+/** First node of condition queue. */
+private transient Node firstWaiter;
+/** Last node of condition queue. */
+private transient Node lastWaiter;
+```
+
+只有两个字段代表condition的wait队列如果同一个condition在其他线程中也调用了`await`。将会在此队列中排队。
+
+### 行为分析
+
+### await() 
+
+```java
+public final void await() throws InterruptedException {
+    if (Thread.interrupted())
+        throw new InterruptedException();
+    Node node = addConditionWaiter();
+    int savedState = fullyRelease(node);
+    int interruptMode = 0;
+    while (!isOnSyncQueue(node)) {
+        LockSupport.park(this);
+        if ((interruptMode = checkInterruptWhileWaiting(node)) != 0)
+            break;
+    }
+    if (acquireQueued(node, savedState) && interruptMode != THROW_IE)
+        interruptMode = REINTERRUPT;
+    if (node.nextWaiter != null) // clean up if cancelled
+        unlinkCancelledWaiters();
+    if (interruptMode != 0)
+        reportInterruptAfterWait(interruptMode);
+}
+```
+
+`wait`方法首先会检查当前线程是否被中断，如果中断抛出异常。然后建立一个condition节点加入wait队列中：
+
+```java
+private Node addConditionWaiter() {
+    if (!isHeldExclusively())
+        throw new IllegalMonitorStateException();
+    Node t = lastWaiter;
+    // If lastWaiter is cancelled, clean out.
+    if (t != null && t.waitStatus != Node.CONDITION) {
+        unlinkCancelledWaiters();
+        t = lastWaiter;
+    }
+
+    Node node = new Node(Node.CONDITION);
+
+    if (t == null)
+        firstWaiter = node;
+    else
+        t.nextWaiter = node;
+    lastWaiter = node;
+    return node;
+}
+```
+
+`addConditionWaiter`首先调用`isHeldExclusively`判断当前线程是否是成功占用锁的线程，如果不是则抛出`IllegalMonitorStateException`。然后调用`unlinkCancelledWaiters`将等待队列里面处于取消状态的节点删除。最后新建一个condition节点加入ConditionObject的等待队列里面。
+
+接下来调用`fullyRelease`将AQS的state变量设置为0。
+
+```java
+final int fullyRelease(Node node) {
+    try {
+        int savedState = getState();
+        if (release(savedState))
+            return savedState;
+        throw new IllegalMonitorStateException();
+    } catch (Throwable t) {
+        node.waitStatus = Node.CANCELLED;
+        throw t;
+    }
+}
+```
+
+`fullyRelease`调用`release`将state置0后还会保存下来原值，在唤醒重新加入队列时候用。同时唤醒AQS队列中的下一个等待锁的节点，让其获取锁。接下来调用`isOnSyncQueue`(为什么调用它没分析出来)判断等待队列中的节点是否在AQS等待锁的队列中。
+
+```java
+final boolean isOnSyncQueue(Node node) {
+    if (node.waitStatus == Node.CONDITION || node.prev == null)
+        return false;
+    if (node.next != null) // If has successor, it must be on queue
+        return true;
+   //node.prev可以是非空的，但尚未在队列中，因为将其置于队列中的CAS可能会失败。 所以我们必须从尾部查找以确保它真正成功。 在调用此方法时，它总是接近尾部，除非CAS失败（这不太可能），它将存在，所以我们几乎不会遍历很多。
+     
+    return findNodeFromTail(node);
+}
+```
+
+如果Condition队列中的节点不在AQS队列中，则调用`LockSupport.park()`将当前线程阻塞，(放弃监视器)。就像`Object.wait()`一样。需要注意的是park是在一个循环中进行的，循环会判断wait节点是否在等待队列中，这么做的目的与`Object.wait()`一样，是为了**防止线程虚假唤醒的情况**。
+
+到此为止该线程已经成功暂停，下面的代码的作用是在该线程被唤醒之后的行为。
+
+线程被唤醒有两种情况：
+
+1. 在`signal`方法中在将wait节点转入AQS队列后，发现前驱节点已经取消，则会将本线程唤醒，让本线程继续执行，通过`acquireQueued`方法来处理取消的节点。
+2. 本线程在wait之前被中断，LockSupport.park()会被唤醒，程序就会继续向下执行并判断这种情况，抛出异常。
+3. 线程被`signal`正常唤醒，或在唤醒之后被中断，那么这都属于正常情况，线程在从新获取锁之后则会正常往下执行。
+
+
+
+首先线程被唤醒过后调用`checkInterruptWhileWaiting`判断线程是否被中断过，是在`await`期间被中断，还是被唤醒之后被中断，还是没有被中断过：
+
+```java
+private int checkInterruptWhileWaiting(Node node) {
+    return Thread.interrupted() ?
+        (transferAfterCancelledWait(node) ? THROW_IE : REINTERRUPT) :
+        0;
+}
+```
+
+如果线程被中断过，则调用`transferAfterCancelledWait`判断具体什么时候被中断过。
+
+```java
+final boolean transferAfterCancelledWait(Node node) {
+    if (node.compareAndSetWaitStatus(Node.CONDITION, 0)) {
+        enq(node);
+        return true;
+    }
+    /*
+     * 如果我们丢失了一个signal（），那么我们就不能继续它直到完成它的enq（）。 在不完全转移期间取消既罕见又短暂，所以只需自旋。
+     */
+    while (!isOnSyncQueue(node))
+        Thread.yield();
+    return false;
+}
+```
+
+如果该方法返回true,说明在当前线程被唤醒前被中断，并将节点转移到同步队列。如果在当前线程被唤醒之后才被中断，则判断当前节点是否在同步队列中，如果不在说明`signal`出现了异常，自旋让出当前线程。否则返回false,说明当前线程在被signal唤醒后被中断。
+
+```java
+private Node enq(Node node) {
+    for (;;) {
+        Node oldTail = tail;
+        if (oldTail != null) {
+            node.setPrevRelaxed(oldTail);
+            if (compareAndSetTail(oldTail, node)) {
+                oldTail.next = node;
+                return oldTail;
+            }
+        } else {
+            initializeSyncQueue();
+        }
+    }
+}
+```
+
+`enq`与`addWaiter`相似作用是将ConditionObject队列中的节点加入AQS同步队列中。但它返回的是旧队列尾部，也就是新队列尾部的前驱。
+
+```java
+if (acquireQueued(node, savedState) && interruptMode != THROW_IE)
+    interruptMode = REINTERRUPT;
+if (node.nextWaiter != null) // clean up if cancelled
+    unlinkCancelledWaiters();
+if (interruptMode != 0)
+    reportInterruptAfterWait(interruptMode);
+```
+
+最后线程尝试获取锁，`acquireQueued`里面会处理第一种唤醒情况（节点被取消），将ConditionObject等待队列中后面排队的被取消的节点清除。并判断当前线程是否是在被唤醒之前中断过，如果唤醒之前中断过则会抛出异常，如果唤醒之后中断过则会在此调用`Thread.interrupt`再次将自己中断。为什么要再次将自己中断呢，因为程序必须检查线程是够在wait期间被中断过，但是每当调用currentThread().isInterrupted(true)后，就会将当前的中断状态取消（这是可选的）。所以如果唤醒之后线程被中断是合法的情况，程序不需要抛出异常，自然要将自己重新中断。
+
+### signal()
+
+```java
+public final void signal() {
+    if (!isHeldExclusively())
+        throw new IllegalMonitorStateException();
+    Node first = firstWaiter;
+    if (first != null)
+        doSignal(first);
+}
+```
+
+`signal`将等待时间最长的线程（如果存在）从此条件的等待队列移动到拥有锁的等待队列。这一点与Object.notify()不同。
+
+`doSignal`删除并传输节点，直到命中未取消的节点或null。 从`signal`方法分离出来是为了鼓励编译器在没有wait节点的时候将方法内联以提高效率。
+
+```java
+private void doSignal(Node first) {
+    do {
+        if ( (firstWaiter = first.nextWaiter) == null)
+            lastWaiter = null;
+        first.nextWaiter = null;
+    } while (!transferForSignal(first) &&
+             (first = firstWaiter) != null);
+}
+```
+
+
+
+```java
+final boolean transferForSignal(Node node) {
+    /*
+     * 如果无法更改waitStatus，则该节点已被取消。
+     */
+    if (!node.compareAndSetWaitStatus(Node.CONDITION, 0))
+        return false;
+
+    /*
+     * 拼接到队列并尝试设置前任的waitStatus以指示该线程（可能）正在等待。
+      * 如果取消或尝试设置waitStatus失败，则唤醒重新同步（在这种情况下，
+      * waitStatus可能是暂时且无害的）。
+     */
+    Node p = enq(node);
+    int ws = p.waitStatus;
+    if (ws > 0 || !p.compareAndSetWaitStatus(ws, Node.SIGNAL))
+        LockSupport.unpark(node.thread);
+    return true;
+}
+```
+
+`transferForSignal`方法要联系到`await`方法在阻塞线程时的循环代码看。如果节点被取消则继续在Condition队列中遍历下一个。如果将当前节点添加到AQS同步队列后，发现前驱的节点被取消，则直接唤醒所遍历节点的线程。其线程被唤醒后由于节点处于AQS队列中则会跳出循环继续向下执行，在acquireQueue中会进行处理，跳过已取消的节点。直到前面的节点为signal，然后阻塞自己正常等待获取锁。
