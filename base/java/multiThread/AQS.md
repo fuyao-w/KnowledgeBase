@@ -1,4 +1,4 @@
-AbstractQueuedSynchronizer是jdk实现锁的基础框架，对于juc包的理解非常重要。
+AbstractQueuedSynchronizer是jdk实现锁和其他同步器的基础框架，对于juc包的理解非常重要。
 同时AQS的实现为CLH锁的变体。了解CLH锁也至关重要。直接在`AbstractQueuedSynchronizer`中了解所有的方法用途不会很容易，所以这里，只介绍与AQS类相关的CLH锁和AQS的基本`acquire`、`release`方法与Condition,其他的方法通过应用AQS的类来分析。
 
 ## CLH
