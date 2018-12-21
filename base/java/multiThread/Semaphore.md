@@ -70,22 +70,7 @@ public class Semaphore implements java.io.Serializable
 
 信号量也有两个版本公平和非公平，运行原理在AQS中已经介绍过了。这里主要介绍钩子方法，和AQS中没有提到过得方法。
 
-
-
-```java
-protected final boolean tryReleaseShared(int releases) {
-    for (;;) {
-        int current = getState();
-        int next = current + releases;
-        if (next < current) // overflow
-            throw new Error("Maximum permit count exceeded");
-        if (compareAndSetState(current, next))
-            return true;
-    }
-}
-```
-
-释放信号量`tryReleaseShared`钩子方法,原理也很简单。
+## acquire
 
 ```java
 public void acquire() throws InterruptedException {
@@ -103,7 +88,7 @@ public final void acquireSharedInterruptibly(int arg)
 }
 ```
 
-`tryAcquireShared`在尝试获取信号量失败后，调用AQS的`doAcquireSharedInterruptibly`
+tryAcquireShared在尝试获取信号量失败后，调用AQS的doAcquireSharedInterruptibly，AQS里跟shared有关的方法用于允许多个线程获取state成功的情况，比如信号量、读写锁的工具中。
 
 ```java
 private void doAcquireSharedInterruptibly(int arg)
@@ -139,7 +124,7 @@ private void setHeadAndPropagate(Node node, int propagate) {
     setHead(node);
     /*
      * 如果以下情况尝试发信号通知下一个排队节点：
-     * 传播由调用者指示，或者由前一个操作记录（在setHead之前或之后为h.waitStatus）
+     * 传播由调用者或者前一个操作记录指示（在setHead之前或之后为h.waitStatus）
      * （注意：这使用waitStatus的符号检查，因为PROPAGATE状态可能转换为SIGNAL。 
      * 并且下一个节点正在共享模式中等待，或者我们不知道，
      * 因为它看起来是空的
@@ -155,7 +140,11 @@ private void setHeadAndPropagate(Node node, int propagate) {
 }
 ```
 
-setHeadAndPropagate设置队列头，并检查后继者是否可能在共享模式下等待，如果是传播，则设置传播  > 0或PROPAGATE状态。
+setHeadAndPropagate检查后继者是否可能在共享模式下等待获取state，如果是的话则需要向后继节点进行传播。以通知后继节点可以尝试获取state。
+
+**如果propagate（剩余可以获取的state数量）大于0或者旧的头结点不为null（也就是说明之前已经有线程排过队）的时候：如果旧的头结点的waitStatus小于0，又或者之前没有节点排过队，那么就判断新的头结点的waitStatus小于0的时候，并且如果后继节点在共享模式或者为null的时候就要调用`doReleaseShared`释放后继节点。**
+
+**这个判断不好理解，但反着来分析应该好理解。如果state为0，并且也没有别的节点排过队，或者state为0，前驱节waitStatue点被标记为0或者取消。那么证明下一个节点获取state也会失败，因为当前获取成功的节点都没执行完呢。所以没有必要去唤醒后继节点。**
 
 ```java
 private void doReleaseShared() {
@@ -184,4 +173,35 @@ private void doReleaseShared() {
     }
 }
 ```
+
+在获取state过程中，前驱节点都会被后继节点修改waitStatus为`signal`。AQS队列上该节点以共享模式占用state成功之后，其他的节点也有权利尝试获取state，所以要唤醒头结点的后继节点来让它尝试获取state。如果头结点被后继节点将`waitStatus`将修改为siganal,则将`waitStatus`修改为0并唤醒后继节点。如果头结点的后继节点在共享模式下等待，那么就`waitStatus`设置为`PROPAGATE`。这样后继节点就不会被SIGNAL状态立即阻塞，而是继续自旋一次尝试获取锁（PROPAGATE与0状态引起的行为是一致的，个人分析即使不用PROPAGATE状态也没有问题，在这里是为了更明确的区分两个模式的不同），下一个以共享模式排队的节点也会继续做相同的动作，以使有资格获取state的节点都不会被阻塞。
+
+### release
+
+释放操作调用AQS的`releaseShared`:
+
+```java
+public final boolean releaseShared(int arg) {
+    if (tryReleaseShared(arg)) {
+        doReleaseShared();
+        return true;
+    }
+    return false;
+}
+```
+
+```java
+protected final boolean tryReleaseShared(int releases) {
+    for (;;) {
+        int current = getState();
+        int next = current + releases;
+        if (next < current) // overflow
+            throw new Error("Maximum permit count exceeded");
+        if (compareAndSetState(current, next))
+            return true;
+    }
+}
+```
+
+tryReleaseShared是AQS的钩子方法。doReleaseShared已经在acquire里介绍过。
 
