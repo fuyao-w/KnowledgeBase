@@ -372,5 +372,5 @@ private final Object arenaExchange(Object item, boolean timed, long ns) {
 }
 ```
 
-
+`arenaExchange`将交换槽变成了一个数组，初始默认在0索引位置尝试交换，交换成功 直接返回，否则在index位置上尝试，并且根据collides（竞争失败次数）进行扩容。还有相应的收缩策略，知道超时或占领成功。
 
