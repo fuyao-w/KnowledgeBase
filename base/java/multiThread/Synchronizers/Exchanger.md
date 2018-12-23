@@ -66,32 +66,29 @@
     // else retry on CAS failure
   }
  
-  这是“双重数据结构”中最简单的形式 - 
+ 
 ```
 
-       请参阅Scott和Scherer的DISC 04论文和
-​      http://www.cs.rochester.edu/research/synchronization/pseudocode/duals.html
-​     
-​      这在原则上很有效。但实际上，像许多以单个位置的原子更新为中心的算法一样，当有多个参与者使用同一个Exchange时，它会出现可怕的扩展。因此，实现使用消除竞争的形式，通过安排一些线程通常使用不同的插槽来扩展这种争用，同时仍然确保最终，任何两方都能够交换项目。也就是说，我们不能完全跨线程进行分区，而是提供线程竞技场索引，这些索引平均会在争用下增长并在缺乏争用的情况下收缩。我们通过定义我们需要的节点作为ThreadLocals来处理这个问题，并在每个线程索引和相关的簿记状态中包含它们。 （我们可以安全地重复使用每个线程节点，而不是每次都创建它们，因为插槽在指向节点与null之间交替，因此不会遇到ABA问题。但是，我们需要在使用之间重新设置它们。）
-​     
+这是“双重数据结构”中最简单的形式 
+​     这种方式在原则上是高效的，但实际上，像许多在单个位置上进行原子更新的算法一样，当许多参与者使用同一个Exchanger时，存在严重的伸缩性问题。所以我们的实现通过引入一个消去数组从而安排不同的线程使用不同的slot来降低竞争，并且保证最终会成对交换数据。这意味着我们不能完全地控制线程之间的划分方式，但是我们通过在竞争激烈时增加arena的范围，竞争变少时减少arena的范围来分配线程可用的下标。我们为了达到这个效果，通过ThreadLocals来定义Node，以及在Node中包含了线程下标index以及相应的跟踪状态。（对于每个线程，我们可以重用私有的Node而不是重新创建一个，因为slot只会通过CAS操作交替地变化(Node VS null)，从而不会遇到ABA问题。当然，我们在使用时需要重新设置item）。
 
-实现一个有效的舞台需要分配一堆空间，所以我们只有在检测到争用时才这样做（除了在单处理器上，它们没有帮助，所以不使用）。 否则，交换使用单槽slotExchange方法。 在争用时，不仅槽必须位于不同的位置，而且由于位于相同的高速缓存线（或更一般地，相同的相干单元），所以位置不得遇到存储器争用。 因为在撰写本文时，无法确定缓存行大小，因此我们定义了一个足以满足常见平台的值。 此外，在其他地方采取额外的谨慎措施以避免其他错误/无意的共享并增强局部性，包括向节点添加填充（通过@Contended），将“bound”嵌入为Exchanger字段。
 
-​	竞技场开始只有一个用过的插槽。 我们通过跟踪碰撞来扩展有效的竞技场规模; 即尝试交换时失败的CAS。 根据上述算法的性质，可靠地指示争用的唯一类型的冲突是当两个尝试的释放冲突时 - 两个尝试的提议中的一个可以合法地失败到CAS而不指示多于一个其他线程的争用。 （注意：通过在CAS失败后读取插槽值来更准确地检测争用是可能但不值得的。）当线程在当前竞技场界限内的每个时隙发生冲突时，它会尝试将竞技场大小扩展一。 我们通过在“绑定”字段上使用版本（序列）编号来跟踪边界内的碰撞，并在参与者注意到绑定已更新（在任一方向上）时保守地重置碰撞计数。
 
-​	有效的竞技场大小减少（当有超过一段时间后，放弃等待一段时间，然后尝试
-在到期时递减竞技场大小。 “一阵子”的价值是一个经验问题。我们通过捎带来实施
-使用spin-> yield-> block是合理的必要条件无论如何等待表现 - 在繁忙的交换机，优惠
-通常几乎立即释放，在这种情况下上下文打开多处理器是非常缓慢/浪费的。竞技场
-等待只是省略阻止部分，而是取消。旋转count根据经验选择为避免阻塞的值在最大持续汇率下的99％的时间各种试验机。旋转和产量需要一些限制随机性（使用便宜的xorshift）来避免规则的模式这会导致非生产性的生长/收缩周期。 （用一个伪随机也有助于规范旋转周期的持续时间使分支变得不可预测。）另外，在报价期间，a 服务员可以“知道”当它的插槽有时它会被释放已更改，但在设置匹配之前无法继续。在里面平均时间它不能取消报价，所以反而旋转/收益。注意：可以通过更改来避免这种二次检查线性化点是匹配字段的CAS（如已完成在Scott＆Scherer DISC论文中的一个案例中，也是如此稍微增加异步，以牺牲较差的碰撞为代价检测并且无法始终重用每线程节点。所以
-目前的方案通常是一个更好的权衡。
-      
+为了实现一个高效的arena(场地)，我们仅在探测到竞争时才开辟空间(当然在单CPU时我们什么都不做)，首先我们通过单个slot的slotExchange方法来交换数据，探测到竞争时，我们会通过arena安排不同位置的slot，并且保证没有slot会在同一个缓存行上(cache line)。因为当前没有办法确定缓存行的尺寸，我们使用对任何平台来说都足够大的值。并且我们通过其他手段来避免错误/非意愿的共享来增加局部性，比如对Node使用边距（via sun.misc.Contended），"bound"作为Exchanger的属性，以及使用区别于LockSupport的重新安排park/unpark的版本来工作。
 
-​	在碰撞中，索引以相反的顺序循环地遍历竞技场，当边界改变时，在最大索引处重新开始（这将倾向于最稀疏）。 （在到期时，索引会减半，直到达到0.）有可能（并且已经尝试过）使用随机化，素数值步进或双哈希样式遍历而不是简单的循环遍历来减少聚束。 但凭经验，这些可能带来的任何好处都无法克服其增加的开销：除非存在持续争用，否则我们正在快速管理运行，因此更简单/更快速的控制策略比更准确但更慢的控制策略更好。
-因为我们对竞技场大小控制使用到期，所以我们不能在公共交换方法的定时版本中抛出TimeoutExceptions，直到竞技场大小缩小为零（或竞技场未启用）。 这可能会延迟对超时的响应，但仍然在规范内。   
-基本上所有的实现都在slotExchange和arenaExchange方法中。 它们具有相似的整体结构，但在太多细节上有所不同。 slotExchange方法使用单个Exchanger字段“slot”而不是arena数组元素。 然而，它仍然需要最小的碰撞检测来触发竞技场构造。 （最混乱的部分是确保中断状态和InterruptedExceptions在转换期间可以调用两种方法。这是通过使用null return作为重新检查中断状态的标记来完成的。）
+一开始我们只使用一个slot，然后通过记录冲突次数从而扩展arena的尺寸（冲突：CAS在交换数据时失败）。对于以上算法来说，能够表明竞争的碰撞类型是两个线程尝试释放Node的冲突----线程竞争提供Node的情况是可以合理地失败的。当一个线程在当前arena的每个位置上都失败时，会试着去递增arena的尺寸。我们记录冲突的过程中会跟踪"bound”的值，以及会重新计算冲突次数在bound的值被改变时（当然，在冲突次数足够时会改变bound）。
 
-​	在这种代码中太常见了，方法是单片的，因为大多数逻辑依赖于作为局部变量维护的字段的读取，因此不能很好地考虑因素 - 主要是，这里，庞大的spin-> yield-> block /取消代码。 请注意，即使通过释放线程读取字段Node.item也不会将其声明为volatile，因为它们仅在必须在访问之前的CAS操作之后执行此操作，并且拥有线程的所有使用在其他操作中以其他方式可接受地排序。 （因为实际的原子点是插槽CAS，在一个版本中写入Node.match比完全易失性写入更弱也是合法的。但是，这样做不成功，因为它可能允许进一步推迟写入 ，推迟进步。）
+当arena的可用尺寸大于1时，参与者会在等待一会儿之后在退出时递减arena的可用尺寸。这个“一会儿”的时间是经验决定的。我们通过借道使用spin->yield->block的方式来获得合理的等待性能--在一个繁忙的exchanger中，提供数据的线程经常是被立即释放的，相对应的多cpu环境中的上下文切换是非常缓慢/浪费的。arena上的等待去除了阻塞，取而代之的是取消。从经验上看所选择的自旋次数可以避免99%的阻塞时间，在一个极大的持久的交换速率以及一系列的计算机上。自旋以及退让产生了一些随机的特性（使用一种廉价的xorshift）从而避免了严格模式下会引起没必要的增长/收缩环。对于一个参与者来说，它会在slot已经改变的时候知道将要被唤醒，但是直到match被设置之后才能取得进展。在这段时间里它不能取消自己，所以只能通过自旋/退让来代替。注意：可以通过避免第二次检测，通过改变线性化点到对于match属性的CAS操作，当然这样做会增加一点异步性，以及牺牲了碰撞检测的效果和重用一线程一Node的能力。所以现在的方案更好。
+
+检测到碰撞时，下标逆方向循环遍历arena，当bound改变时会以最大下标（这个位置Node是稀少的）重新开始遍历（当退出（取消）时，下标会收缩一半直到变0）。我们这里使用了单步来遍历，原因是我们的操作出现的极快在没有持续竞争的情况下，所以简单/快速的控制策略能够比精确但是缓慢的策略工作地更好。
+
+因为我们使用了退出的方式来控制arena的可用尺寸，所以我们不能直接在限时版本中抛出TimeoutException异常直到arena的尺寸收缩到0（也就是说只要下标为0的位置可用）或者arena没有被激活。这可能对原定时间有延迟，但是还是可以接受的。
+
+本质上来看所有的实现都存于方法slotExchange和arenaExchange中。这两个有相似的整体结构，但是在许多细节上不同。slotExchange方法使用单个"slot"属性相对于使用arena中的元素。同时它也需要极少的冲突检测去激活arena的构造（这里最糟糕的部分是确定中断状态以及InterruptedException异常在其他方法被调用时出现，这里是通过返回null来检查是否被中断.)
+
+在这种类型的代码中，由于方法依赖的大部分逻辑所读取的变量是通过局部量来维持的，所以方法是大片的并且难以分解--这里主要是通过连在一起的 spin->yield->block/cancel 代码)。以及严重依赖于本身具有的Unsafe机制和内联的CAS操作和相关内存读取操作。注意Node.item不是volatile的，尽管它会被释放线程所读取，因为读取操作只会在CAS操作完成之后才发生，以及所有自己的变量都是以能被接受的次序被其他操作所使用。当然这里也可以使用CAS操作来用match，但是这样会减慢速度）。
+
+
 
 ### 字段
 
@@ -179,4 +176,201 @@ private volatile Node slot;
  */
 private volatile int bound;
 ```
+
+#### exchange
+
+```java
+public V exchange(V x) throws InterruptedException {
+    Object v;
+    Node[] a;
+    Object item = (x == null) ? NULL_ITEM : x; // translate null args
+    if (((a = arena) != null ||
+         (v = slotExchange(item, false, 0L)) == null) &&
+        ((Thread.interrupted() || // disambiguates null return
+          (v = arenaExchange(item, false, 0L)) == null)))
+        throw new InterruptedException();
+    return (v == NULL_ITEM) ? null : (V)v;
+}
+```
+
+`exchange`在线程比较少的情况下，调用`slotExchange`,在线程比较多的情况下调用`arenaExchange`。
+
+```java
+private final Object slotExchange(Object item, boolean timed, long ns) {
+    Node p = participant.get();
+    Thread t = Thread.currentThread();
+    if (t.isInterrupted()) // preserve interrupt status so caller can recheck
+        return null;
+
+    for (Node q;;) {
+        if ((q = slot) != null) {
+            if (SLOT.compareAndSet(this, q, null)) {
+                Object v = q.item;
+                q.match = item;
+                Thread w = q.parked;
+                if (w != null)
+                    LockSupport.unpark(w);
+                return v;
+            }
+            // create arena on contention, but continue until slot null
+            if (NCPU > 1 && bound == 0 &&
+                BOUND.compareAndSet(this, 0, SEQ))
+                arena = new Node[(FULL + 2) << ASHIFT];
+        }
+        else if (arena != null)
+            return null; // caller must reroute to arenaExchange
+        else {
+            p.item = item;
+            if (SLOT.compareAndSet(this, null, p))
+                break;
+            p.item = null;
+        }
+    }
+
+    // await release
+    int h = p.hash;
+    long end = timed ? System.nanoTime() + ns : 0L;
+    int spins = (NCPU > 1) ? SPINS : 1;
+    Object v;
+    while ((v = p.match) == null) {
+        if (spins > 0) {
+            h ^= h << 1; h ^= h >>> 3; h ^= h << 10;
+            if (h == 0)
+                h = SPINS | (int)t.getId();
+            else if (h < 0 && (--spins & ((SPINS >>> 1) - 1)) == 0)
+                Thread.yield();
+        }
+        else if (slot != p)
+            spins = SPINS;
+        else if (!t.isInterrupted() && arena == null &&
+                 (!timed || (ns = end - System.nanoTime()) > 0L)) {
+            p.parked = t;
+            if (slot == p) {
+                if (ns == 0L)
+                    LockSupport.park(this);
+                else
+                    LockSupport.parkNanos(this, ns);
+            }
+            p.parked = null;
+        }
+        else if (SLOT.compareAndSet(this, p, null)) {
+            v = timed && ns <= 0L && !t.isInterrupted() ? TIMED_OUT : null;
+            break;
+        }
+    }
+    MATCH.setRelease(p, null);
+    p.item = null;
+    p.hash = h;
+    return v;
+}
+```
+
+`participant`为每个线程提供唯一的`Node`，`Node`中保存了两个线程之间交换的item的相关信息，在开始检查当前线程是否被中断，如果被中断则返回null，由外层抛出异常。
+
+交换元素的逻辑在一个自旋里，如果交换槽不为null，说明其他线程已经将要交换的信息准备好，需要现将自己的交换槽通过CAS清空。然后取出交换槽里其他线程交换的item，将自己需要交换的item放到自己交换槽的`match`字段中，并唤醒与其交换信息的被阻塞的线程。
+
+如果CAS将交换槽清空失败，则说明当前有其他线程参与竞争，需要创建一个竞技场也就是Node数组（数组的长度会根据CPU的数量进行优化）。但是依然会尝试从原来的槽中取item,知道交换槽被其他线程取走置null。
+
+如果交换操为null，但是竞技场（Node数组）不为null，则直接返回null，交给`arenaExchange`从竞技场中取出。
+
+如果交换槽和竞技场都为null，则说明还没有其他线程发起交换，那么自己可以将交换信息先放到槽中。
+
+首先将当前线程的交换item赋值给当前线程专属的Node节点然后通过CAS赋值将Node给交换槽，然后退出自旋，进行后续操作。
+
+接下来通过spin->yield->block策略（先自旋一定时间，如果自旋到期限交换槽变了，就重新自旋，否则阻塞）等待`match`被其他线程填充,进行等待以减少线程切换带来的开销。如果超时或者获取到`match`最后会调用`varHandle`的`setRelease`将match清空(保证在次之后其他线程看到的都是更新后的值)，最后返回item。
+
+### arenaExchange
+
+```java
+private final Object arenaExchange(Object item, boolean timed, long ns) {
+    Node[] a = arena;
+    int alen = a.length;
+    Node p = participant.get();
+    for (int i = p.index;;) {                      // access slot at i
+        int b, m, c;
+        int j = (i << ASHIFT) + ((1 << ASHIFT) - 1);
+        if (j < 0 || j >= alen)
+            j = alen - 1;
+        Node q = (Node)AA.getAcquire(a, j);
+        if (q != null && AA.compareAndSet(a, j, q, null)) {
+            Object v = q.item;                     // release
+            q.match = item;
+            Thread w = q.parked;
+            if (w != null)
+                LockSupport.unpark(w);
+            return v;
+        }
+        else if (i <= (m = (b = bound) & MMASK) && q == null) {
+            p.item = item;                         // offer
+            if (AA.compareAndSet(a, j, null, p)) {
+                long end = (timed && m == 0) ? System.nanoTime() + ns : 0L;
+                Thread t = Thread.currentThread(); // wait
+                for (int h = p.hash, spins = SPINS;;) {
+                    Object v = p.match;
+                    if (v != null) {
+                        MATCH.setRelease(p, null);
+                        p.item = null;             // clear for next use
+                        p.hash = h;
+                        return v;
+                    }
+                    else if (spins > 0) {
+                        h ^= h << 1; h ^= h >>> 3; h ^= h << 10; // xorshift
+                        if (h == 0)                // initialize hash
+                            h = SPINS | (int)t.getId();
+                        else if (h < 0 &&          // approx 50% true
+                                 (--spins & ((SPINS >>> 1) - 1)) == 0)
+                            Thread.yield();        // two yields per wait
+                    }
+                    else if (AA.getAcquire(a, j) != p)
+                        spins = SPINS;       // releaser hasn't set match yet
+                    else if (!t.isInterrupted() && m == 0 &&
+                             (!timed ||
+                              (ns = end - System.nanoTime()) > 0L)) {
+                        p.parked = t;              // minimize window
+                        if (AA.getAcquire(a, j) == p) {
+                            if (ns == 0L)
+                                LockSupport.park(this);
+                            else
+                                LockSupport.parkNanos(this, ns);
+                        }
+                        p.parked = null;
+                    }
+                    else if (AA.getAcquire(a, j) == p &&
+                             AA.compareAndSet(a, j, p, null)) {
+                        if (m != 0)                // try to shrink
+                            BOUND.compareAndSet(this, b, b + SEQ - 1);
+                        p.item = null;
+                        p.hash = h;
+                        i = p.index >>>= 1;        // descend
+                        if (Thread.interrupted())
+                            return null;
+                        if (timed && m == 0 && ns <= 0L)
+                            return TIMED_OUT;
+                        break;                     // expired; restart
+                    }
+                }
+            }
+            else
+                p.item = null;                     // clear offer
+        }
+        else {
+            if (p.bound != b) {                    // stale; reset
+                p.bound = b;
+                p.collides = 0;
+                i = (i != m || m == 0) ? m : m - 1;
+            }
+            else if ((c = p.collides) < m || m == FULL ||
+                     !BOUND.compareAndSet(this, b, b + SEQ + 1)) {
+                p.collides = c + 1;
+                i = (i == 0) ? m : i - 1;          // cyclically traverse
+            }
+            else
+                i = m + 1;                         // grow
+            p.index = i;
+        }
+    }
+}
+```
+
+
 
