@@ -110,3 +110,53 @@ TASKS_PER_PHASER的最佳值主要取决于预期的同步速率。 低至4的�
 
 ### 分析
 
+
+
+```java
+主状态表示，包含四个bit位域：
+1.   unarrived  -- 尚未成为障碍的parties数量 (bits  0-15)
+2.   parties    -- 等待的parties数            (bits 16-31)
+3.   phase      -- 障碍的产生            (bits 32-62)
+4.   terminated -- 如果障碍终止则设置            (bit  63  sign)
+
+除了没有注册方的移相器之外，其他非法状态是零方和一个未得到支持的方（下面编码为EMPTY）。
+
+为了有效地保持原子性，这些值被打包成单个（原子）长度。 良好的性能依赖于保持状态解码和编码简单，并保持竞赛窗口短。
+
+除了初始注册子相位器（即，具有非空父母的子帧）之外，所有状态更新都通过CAS执行。 在这种（相对罕见的）情况下，我们使用内置同步锁定，同时首次注册其父节点。
+
+允许subphaser的阶段滞后于其祖先的阶段，直到实际访问它为止 - 请参阅方法reconcileState。
+
+private volatile long state;
+```
+
+### 分析
+
+构造方法
+
+```java
+public Phaser(Phaser parent, int parties) {
+    if (parties >>> PARTIES_SHIFT != 0)
+        throw new IllegalArgumentException("Illegal number of parties");
+    int phase = 0;
+    this.parent = parent;
+    if (parent != null) {
+        final Phaser root = parent.root;
+        this.root = root;
+        this.evenQ = root.evenQ;
+        this.oddQ = root.oddQ;
+        if (parties != 0)
+            phase = parent.doRegister(1);
+    }
+    else {
+        this.root = this;
+        this.evenQ = new AtomicReference<QNode>();
+        this.oddQ = new AtomicReference<QNode>();
+    }
+    this.state = (parties == 0) ? (long)EMPTY :
+        ((long)phase << PHASE_SHIFT) |
+        ((long)parties << PARTIES_SHIFT) |
+        ((long)parties);
+}
+```
+
