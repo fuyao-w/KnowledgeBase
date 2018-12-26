@@ -7,7 +7,7 @@ public interface TransferQueue<E> extends BlockingQueue<E>
 ### java doc
 
 一个BlockingQueue，生产者可以等待消费者接收元素。 TransferQueue可能在例如消息传递应用程序中很有用，其中生产者有时（使用`transfer（E）`）方法等待消费者调用take或poll接收元素，而在其他时候将元素排队（通过方法put）而不等待接收。 还可以使用tryTransfer的非阻塞和超时版本。 也可以通过hasWaitingConsumer（）查询TransferQueue，是否有任何线程等待项目，这与窥视操作相反。
-与其他阻塞队列一样，TransferQueue可能是容量限制的。 如果是，则尝试的传输操作可以最初阻止等待可用空间，和/或随后阻止等待消费者接收。 请注意，在容量为零的队列中，例如SynchronousQueue，put和transfer实际上是同义词。
+与其他阻塞队列一样，TransferQueue可能是容量限制的。 如果是，则尝试的传输操作可以最初阻塞等待可用空间，和/或随后阻塞等待消费者接收。 请注意，在容量为零的队列中，例如SynchronousQueue，put和transfer实际上是同义词。
 
 ```java
 
@@ -37,7 +37,7 @@ public class LinkedTransferQueue<E> extends AbstractQueue<E>
 
 Slack双队列概述
 
-双队列， 是（链接）队列，其中节点可以表示数据或请求。 当一个线程试图将一个数据节点入队但遇到一个请求节点时，它会“匹配”并删除它; 反之亦然，用于排队请求。 阻止双队列安排排队不匹配请求的线程阻塞，直到其他线程提供匹配。 双同步队列还安排排队不匹配数据的线程也会阻塞。 双重传输队列支持所有这些模式，如呼叫者所指示的。
+双队列， 是（链接）队列，其中节点可以表示数据或请求。 当一个线程试图将一个数据节点入队但遇到一个请求节点时，它会“匹配”并删除它; 反之亦然，用于排队请求。 阻塞双队列安排排队不匹配请求的线程，直到其他线程提供匹配。 双同步队列还安排排队不匹配数据的线程也会阻塞。 双重传输队列支持所有这些模式，如调用者所指示的。
 
 可以使用Michael＆Scott（M＆S）无锁队列算法的变体来实现FIFO双队列。它保持两个指针字段“head”，指向（匹配的）节点，该节点又指向第一个实际的（不匹配的） ）队列节点（如果为空则为null）; 和“tail”指向队列中的最后一个节点（如果为空则再次为null）。 例如，这是一个包含四个数据元素的队列：
 
@@ -88,7 +88,7 @@ Overview of implementation
 1.遍历直到匹配或追加(method xfer)
 
 从概念上讲，我们只是从头部开始遍历所有节点。如果我们遇到相反模式的不匹配节点，我们匹配它并返回，也将头部（至少2跳）更新为匹配节点之后的一个（或者如果它是固定的尾随节点则节点本身）。遍历还会检查是否有可能从列表中删除，在这种情况下它们会重新启动。
- 如果到达列表的尾随节点，则无法进行匹配。如果这个调用是untimed poll或tryTransfer（参数“how”现在是），立即返回空手。否则，新节点将附加CAS。成功追加时，如果此调用是ASYNC（例如offer），则元素已成功添加到队列末尾并返回。
+ 如果到达列表的尾随节点，则无法进行匹配。如果这个调用是untimed poll或tryTransfer（参数“how”现在是），立即返回空。否则，新节点将附加CAS。成功追加时，如果此调用是ASYNC（例如offer），则元素已成功添加到队列末尾并返回。
  当然，当不可能匹配时，这种天真的遍历是O（n）。我们通过维护尾指针来优化遍历，尾指针预计会“接近”列表的末尾。如果它指向同一模式的节点，即使它已经死了（在这种情况下，通过此遍历仍然无法匹配前一节点），快速转发到尾部（在存在任意并发更改的情况下）是安全的。 ）。如果我们需要重新启动由于掉落列表，我们可以再次快进到尾部，但只有在自上次遍历后它已经改变（否则我们可能永远循环）。如果不能使用尾部，则从头部开始遍历（但在这种情况下，我们希望能够匹配近头）。与头部一样，我们CAS尾部指针至少推进两次。
 
 2.等待匹配或取消（方法awaitMatch）
@@ -107,3 +107,93 @@ Unlinking removed interior nodes
  因为sweepVotes估计是保守的，并且因为节点在从队列的头部落下时“自然地”取消链接，并且因为即使在扫描正在进行中我们允许投票累积，所以通常比估计的节点少得多。阈值的选择平衡了浪费努力和争用的可能性，而不是提供静态队列中内部节点保留的最坏情况限制。根据经验选择下面定义的值以在各种超时情况下平衡这些值。
  因为链接节点列表上的遍历操作是扫描死节点的自然机会，所以我们通常会这样做，包括可能在遍历时删除元素的所有操作，例如removeIf和Iterator.remove。除了取消或超时阻塞操作外，这在很大程度上消除了死链内部节点的长链。
  请注意，我们无法在扫描期间自行链接未链接的内部节点。但是，当一些后继者最终脱离列表的头部并且是自我链接时，相关的垃圾链终止。
+
+### xfer()
+
+```java
+private E xfer(E e, boolean haveData, int how, long nanos) {
+    if (haveData && (e == null))
+        throw new NullPointerException();
+
+    restart: for (Node s = null, t = null, h = null;;) {
+        for (Node p = (t != (t = tail) && t.isData == haveData) ? t
+                 : (h = head);; ) {
+            final Node q; final Object item;
+            if (p.isData != haveData //匹配
+                && haveData == ((item = p.item) == null)) {
+                if (h == null) h = head;
+                if (p.tryMatch(item, e)) {
+                    if (h != p) skipDeadNodesNearHead(h, p);
+                    return (E) item;
+                }
+            }
+            if ((q = p.next) == null) {
+                if (how == NOW) return e;
+                if (s == null) s = new Node(e);
+                if (!p.casNext(null, s)) continue;
+                if (p != t) casTail(t, s);
+                if (how == ASYNC) return e;
+                return awaitMatch(s, p, e, (how == TIMED), nanos);
+            }
+            if (p == (p = q)) continue restart;
+        }
+    }
+}
+```
+
+xfer首先声明了几个变量，然后确定当前模式是插入还是删除。`(t != (t = tail) && t.isData == haveData)`先将尾指针赋值给t，然后判断此时t是否与赋值之前的t相等和isData字段是够为真。如果判断成功则将t赋值给节点p。失败将头节点赋值给p。
+
+接下来判断p节点是否与当前进行的操作匹配（如果当前是take操作，则头结点有数据匹配。如果是offer,则尾部节点为null匹配），如果此时节点匹配。则调用`tryMatch`将p节点的`item`字段设置为`e`并唤醒等待线程。在调试过程中，p节点会将next字段指向自己，head节点会在匹配操作完成后向后移动一步，但是在匹配的代码当中并没有发现实现逻辑。offer方法也不会将线程阻塞。所以很奇怪这两一步是怎么执行的。
+
+```java
+final boolean tryMatch(Object cmp, Object val) {
+    if (casItem(cmp, val)) {
+        LockSupport.unpark(waiter);
+        return true;
+    }
+    return false;
+}
+```
+
+```java
+final boolean casItem(Object cmp, Object val) {
+    // assert isData == (cmp != null);
+    // assert isData == (val == null);
+    // assert !(cmp instanceof Node);
+    return ITEM.compareAndSet(this, cmp, val);
+}
+```
+
+替换成功后如果p不等于头结点，则调用skipDeadNodesNearHead删除已经匹配过的节点。
+
+```java
+private void skipDeadNodesNearHead(Node h, Node p) {
+    // assert h != null;
+    // assert h != p;
+    // assert p.isMatched();
+    for (;;) {
+        final Node q;
+        if ((q = p.next) == null) break;
+        else if (!q.isMatched()) { p = q; break; } //如果p.next还没有匹配，则将q代替p。
+        else if (p == (p = q)) return;//如果q节点已经到了尾巴，则直接返回
+    }
+    if (casHead(h, p))//将p设置为头结点
+        h.selfLink();//将原头结点的next指向自己
+}
+```
+
+如果操作不匹配，则进入第二if逻辑中。
+
+```java
+if ((q = p.next) == null) {
+    if (how == NOW) return e;
+    if (s == null) s = new Node(e);//新建节点
+    if (!p.casNext(null, s)) continue;//将s设置为p的下一个节点
+    if (p != t) casTail(t, s); //如果p不等于尾节点，则将s设置为尾节点
+    if (how == ASYNC) return e; //如果是同步操作，则直接返回
+    return awaitMatch(s, p, e, (how == TIMED), nanos); //等待
+}
+if (p == (p = q)) continue restart;
+```
+
+在`if (!p.casNext(null, s)) continue;`这一行中，假设最开始head=tail的时候，p也指向此时也指向tail，这一行执行过后按逻辑tail.next应该等于s。但通过调试发现p.next等于它自己，而head本应该等于p，但是现在等于s。也就是说链表此时是断开的。这种行为同上面一样不符合代码的逻辑，但是确实我没有找出其中的原因，所以。只能先到此为止，
