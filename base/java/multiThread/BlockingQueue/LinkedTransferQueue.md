@@ -196,4 +196,5 @@ if ((q = p.next) == null) {
 if (p == (p = q)) continue restart;
 ```
 
-在`if (!p.casNext(null, s)) continue;`这一行中，假设最开始head=tail的时候，p也指向此时也指向tail，这一行执行过后按逻辑tail.next应该等于s。但通过调试发现p.next等于它自己，而head本应该等于p，但是现在等于s。也就是说链表此时是断开的。这种行为同上面一样不符合代码的逻辑，但是确实我没有找出其中的原因，所以。只能先到此为止，
+在`if (!p.casNext(null, s)) continue;`这一行中，假设最开始head=tail的时候，p也指向此时也指向tail，这一行执行过后按逻辑tail.next应该等于s。但通过调试发现p.next等于它自己，而head本应该等于p，但是现在等于s。也就是说链表此时是断开的。这种行为同上面一样不符合代码的逻辑，但是确实我没有找出其中的原因，所以。只能先到此为止。
+
