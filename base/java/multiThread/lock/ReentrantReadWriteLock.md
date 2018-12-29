@@ -249,7 +249,7 @@ protected final boolean tryRelease(int releases) {
         throw new IllegalMonitorStateException();
     int nextc = getState() - releases;
     boolean free = exclusiveCount(nextc) == 0;
-    if (free)
+    if (free) //当独占线程数量为0的时候清空独占线程字段
         setExclusiveOwnerThread(null);
     setState(nextc);
     return free;
