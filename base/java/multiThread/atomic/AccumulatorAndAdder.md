@@ -77,7 +77,7 @@ final void longAccumulate(long x, LongBinaryOperator fn,
                           boolean wasUncontended) {
     int h;
     if ((h = getProbe()) == 0) {//返回当前线程的探测值。由于包限制，从ThreadLocalRandom复制。
-        ThreadLocalRandom.current(); // force initialization
+        ThreadLocalRandom.current(); // 强制初始化
         h = getProbe();
         wasUncontended = true;  //false if CAS failed before call
     }
@@ -86,10 +86,10 @@ final void longAccumulate(long x, LongBinaryOperator fn,
         Cell[] cs; Cell c; int n; long v;
         if ((cs = cells) != null && (n = cs.length) > 0) {
             if ((c = cs[(n - 1) & h]) == null) {//取余
-                if (cellsBusy == 0) {       // Try to attach new Cell
-                    Cell r = new Cell(x);   // Optimistically create
+                if (cellsBusy == 0) {       // 尝试附加新的Cell
+                    Cell r = new Cell(x);   // 乐观创造
                     if (cellsBusy == 0 && casCellsBusy()) {
-                        try {               // Recheck under lock
+                        try {               //在锁定下重新检查
                             Cell[] rs; int m, j;
                             if ((rs = cells) != null &&
                                 (m = rs.length) > 0 &&
@@ -100,13 +100,13 @@ final void longAccumulate(long x, LongBinaryOperator fn,
                         } finally {
                             cellsBusy = 0;
                         }
-                        continue;           // Slot is now non-empty
+                        continue;           //插槽现在非空
                     }
                 }
                 collide = false;
             }
-            else if (!wasUncontended)       // CAS already known to fail
-                wasUncontended = true;      // Continue after rehash
+            else if (!wasUncontended)       // CAS已知失败
+                wasUncontended = true;      // 重拍后继续
             else if (c.cas(v = c.value,
                            (fn == null) ? v + x : fn.applyAsLong(v, x)))
                 break;
@@ -116,7 +116,7 @@ final void longAccumulate(long x, LongBinaryOperator fn,
                 collide = true;
             else if (cellsBusy == 0 && casCellsBusy()) {
                 try {
-                    if (cells == cs)        // Expand table unless stale
+                    if (cells == cs)        // 扩容
                         cells = Arrays.copyOf(cs, n << 1);
                 } finally {
                     cellsBusy = 0;
@@ -192,3 +192,40 @@ public class LongAccumulator extends Striped64 implements Serializable
 LongAdder类提供了此类功能的类比，用于维护计数和总和的常见特殊情况。调用new LongAdder（）相当于新的LongAccumulator（（x，y） - > x + y，0L）。
 
 此类扩展了Number，但没有定义equals，hashCode和compareTo等方法，因为实例应该是变异的，因此不能用作集合键。
+
+```java
+private final LongBinaryOperator function;
+private final long identity;
+
+/**
+ * Creates a new instance using the given accumulator function
+ * and identity element.
+ * @param accumulatorFunction a side-effect-free function of two arguments
+ * @param identity identity (initial value) for the accumulator function
+ */
+public LongAccumulator(LongBinaryOperator accumulatorFunction,
+                       long identity) {
+    this.function = accumulatorFunction;
+    base = this.identity = identity;
+}
+```
+
+LongAccumulator与longAdder通过一个函数式接口定义数值的累积行为
+
+```java
+public void accumulate(long x) {
+    Cell[] cs; long b, v, r; int m; Cell c;
+    if ((cs = cells) != null
+        || ((r = function.applyAsLong(b = base, x)) != b
+            && !casBase(b, r))) { //无竞争使用base字段存储
+        boolean uncontended = true;
+        if (cs == null
+            || (m = cs.length - 1) < 0
+            || (c = cs[getProbe() & m]) == null
+            || !(uncontended =
+                 (r = function.applyAsLong(v = c.value, x)) == v
+                 || c.cas(v, r)))
+            longAccumulate(x, function, uncontended); 
+    }
+}
+```
