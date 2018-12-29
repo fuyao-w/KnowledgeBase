@@ -150,6 +150,8 @@ ReentrantReadWriteLocks可用于在某些类型的集合的某些用途中提高
 
 ### 分析
 
+读写锁与重入锁类似，不同的是读锁以共享模式获取锁
+
 ```java
 abstract static class Sync extends AbstractQueuedSynchronizer {
        
@@ -165,45 +167,83 @@ abstract static class Sync extends AbstractQueuedSynchronizer {
         static final int EXCLUSIVE_MASK = (1 << SHARED_SHIFT) - 1;
 ```
 
+
+
+### 字段
+
 ```java
-protected final boolean tryAcquire(int acquires) {
-    /*
-     * Walkthrough:
-     * 1. 如果读取计数非零或写入计数非零且所有者是不同的线程，则失败。
-     * 2. 如果计数会饱和，那就失败了。 （只有在计数已经非零时才会发生这种情况。）
-     * 3. 否则，如果此线程是可重入获取或队列策略允许，则该线程有资格获得锁定。 
-     * 如果是，请更新状态并设置所有者。
-     */
-    Thread current = Thread.currentThread();
-    int c = getState();
-    int w = exclusiveCount(c);
-    if (c != 0) {
-        // (Note: if c != 0 and w == 0 then shared count != 0)
-        if (w == 0 || current != getExclusiveOwnerThread())
-            return false;
-        if (w + exclusiveCount(acquires) > MAX_COUNT)
-            throw new Error("Maximum lock count exceeded");
-        // Reentrant acquire
-        setState(c + acquires);
-        return true;
-    }
-    if (writerShouldBlock() || //非公平锁返回false,公平锁返回hasQueuedPredecessors方法
-        !compareAndSetState(c, c + acquires))
-        return false;
-    setExclusiveOwnerThread(current);
-    return true;
-}
+     /**
+         * 成功获取readLock的最后一个线程的保持计数。 这样可以保存ThreadLocal查找的常见
+         * 况，即下一个要释放的线程是最后一个要获取的线程。 这是非易失性的，因为它仅用作
+         * 启发式算法，并且对于线程缓存非常有用。
+         *可以比正在缓存读取保持计数的线程更长，但是通过不保留对线程的引用来避免垃圾保留。
+         *通过良性数据竞赛访问; 依赖于记忆模型的最终领域和超薄空中保证。
+         */
+        private transient HoldCounter cachedHoldCounter;
+
+        /**
+         *  firstReader是第一个获得读锁定的线程。
+         * firstReaderHoldCount是firstReader的保持计数。
+         * 更准确地说，firstReader是持久的唯一线程
+         * 将共享计数从0更改为1，并且从那时起没有释放锁定; 如果没有这样的线程，则返回null。
+         * 除非线程终止而不放弃其读锁定，否则不能导致垃圾保留，因为tryReleaseShared将其设置为null。
+         * 通过良性数据竞赛访问; 依赖于内存模型的超薄空间保证参考。
+          * 这允许跟踪读取保持以进行无竞争读取锁很便宜。
+         */
+        private transient Thread firstReader;
+        private transient int firstReaderHoldCount;
 ```
 
 
 
-```java
-/**
-*请注意，条件可以调用tryRelease和tryAcquire。 因此，它们的参数可能包含在条件等待期间释放的
-* 读取和写入保持，并在tryAcquire中重新建立。 
-*/
+### 非公平模式下获取写锁
 
- **/
+```java
+public final void acquire(int arg) {
+    if (!tryAcquire(arg) &&
+        acquireQueued(addWaiter(Node.EXCLUSIVE), arg))
+        selfInterrupt();
+}
+```
+
+```java
+final boolean nonfairTryAcquire(int acquires) {
+    final Thread current = Thread.currentThread();
+    int c = getState();
+    if (c == 0) {
+        if (compareAndSetState(0, acquires)) {
+            setExclusiveOwnerThread(current);
+            return true;
+        }
+    }
+    else if (current == getExclusiveOwnerThread()) {
+        int nextc = c + acquires;
+        if (nextc < 0) // overflow
+            throw new Error("Maximum lock count exceeded");
+        setState(nextc);
+        return true;
+    }
+    return false;
+}
+```
+
+通过nonfairTryAcquire，遇到当前线程持有锁的时候累加`state`实现可重入。并且行为与重入锁基本一致
+
+非公平模式释放锁
+
+```java
+public final boolean release(int arg) {
+    if (tryRelease(arg)) {
+        Node h = head;
+        if (h != null && h.waitStatus != 0)
+            unparkSuccessor(h);
+        return true;
+    }
+    return false;
+}
+```
+
+```java
 protected final boolean tryRelease(int releases) {
     if (!isHeldExclusively())
         throw new IllegalMonitorStateException();
@@ -218,7 +258,17 @@ protected final boolean tryRelease(int releases) {
 
 
 
+### 非公平模式下获取读锁
+
 ```java
+public final void acquireShared(int arg) {
+    if (tryAcquireShared(arg) < 0)
+        doAcquireShared(arg);
+}
+```
+
+```java
+
 protected final int tryAcquireShared(int unused) {
     /*
      * Walkthrough:
@@ -230,30 +280,203 @@ protected final int tryAcquireShared(int unused) {
      */
     Thread current = Thread.currentThread();
     int c = getState();
-    if (exclusiveCount(c) != 0 &&
+    if (exclusiveCount(c) != 0 && //如果独占锁数量不为0并且当前线程不是持有独占锁线程则返回-1
         getExclusiveOwnerThread() != current)
         return -1;
-    int r = sharedCount(c);
-    if (!readerShouldBlock() &&
+    int r = sharedCount(c); //获取读锁的数量
+    if (!readerShouldBlock() && //如果获取读锁需不要阻塞并且读锁持有数量小于65535,并且CAS增加state成功
         r < MAX_COUNT &&
         compareAndSetState(c, c + SHARED_UNIT)) {
-        if (r == 0) {
-            firstReader = current;
-            firstReaderHoldCount = 1;
-        } else if (firstReader == current) {
-            firstReaderHoldCount++;
+        if (r == 0) {           
+            firstReader = current; //如果过读锁持有数量等于0，则设置当前线程为第一个持有读锁的线程
+            firstReaderHoldCount = 1; //firstReader数量设为1
+        } else if (firstReader == current) {//如果当前线程就是第一个持有读锁的线程，则firstReader计数加一
+            firstReaderHoldCount++;  
         } else {
-            HoldCounter rh = cachedHoldCounter;
+            HoldCounter rh = cachedHoldCounter; //不是第一个获取读锁的线程则设置当前线程获取读锁的计数
             if (rh == null ||
                 rh.tid != LockSupport.getThreadId(current))
-                cachedHoldCounter = rh = readHolds.get();
-            else if (rh.count == 0)
-                readHolds.set(rh);
-            rh.count++;
+                cachedHoldCounter = rh = readHolds.get();//新创建HoldCounter
+            else if (rh.count == 0) 
+                readHolds.set(rh);//获取当前线程持有读锁计数
+            rh.count++; //计数+1
         }
         return 1;
     }
     return fullTryAcquireShared(current);
+}	
+```
+
+获取成功返回1，返回fullTryAcquireShared
+
+readerShouldBlock有公平版本和非公平版本
+
+非公平版本：
+
+```java
+final boolean readerShouldBlock() {
+    /*作为一种避免无限期写锁饥饿的启发式方法，如果在队列中的第一个等待线程想持有写锁，则返回true
+     */
+    return apparentlyFirstQueuedIsExclusive();
 }
 ```
+
+```java
+final boolean apparentlyFirstQueuedIsExclusive() {
+    Node h, s;
+    return (h = head) != null &&
+        (s = h.next)  != null &&
+        !s.isShared()         &&
+        s.thread != null;
+}
+```
+
+公平版本：
+
+```java
+final boolean readerShouldBlock() {
+    return hasQueuedPredecessors();//公平版本的readerShouldBlock阻止线程在需要排队的时候还尝试获取锁
+}
+```
+
+
+
+```java
+final int fullTryAcquireShared(Thread current) {
+    /*
+     *此代码与tryAcquireShare
+     * 中的代码部分冗余，但总体上更简单，因为不会使tryAcquireShared与重试之间的交互和懒
+     * 读取保持计数复杂化。
+     */
+    HoldCounter rh = null;
+    for (;;) {
+        int c = getState();
+        if (exclusiveCount(c) != 0) {
+            if (getExclusiveOwnerThread() != current)
+                return -1;
+            // 否则我们持有独家锁;阻止在这里
+            // 会导致死锁。
+        } else if (readerShouldBlock()) {
+            //确保我们没有重新获取读锁定
+            if (firstReader == current) {
+                // assert firstReaderHoldCount > 0;
+            } else {
+                if (rh == null) {
+                    rh = cachedHoldCounter;
+                    if (rh == null ||
+                        rh.tid != LockSupport.getThreadId(current)) {
+                        rh = readHolds.get();
+                        if (rh.count == 0)
+                            readHolds.remove();
+                    }
+                }
+                if (rh.count == 0)
+                    return -1;
+            }
+        }
+        if (sharedCount(c) == MAX_COUNT)
+            throw new Error("Maximum lock count exceeded");
+        if (compareAndSetState(c, c + SHARED_UNIT)) {
+            if (sharedCount(c) == 0) {
+                firstReader = current;
+                firstReaderHoldCount = 1;
+            } else if (firstReader == current) {
+                firstReaderHoldCount++;
+            } else {
+                if (rh == null)
+                    rh = cachedHoldCounter;
+                if (rh == null ||
+                    rh.tid != LockSupport.getThreadId(current))
+                    rh = readHolds.get();
+                else if (rh.count == 0)
+                    readHolds.set(rh);
+                rh.count++;
+                cachedHoldCounter = rh; // cache for release
+            }
+            return 1;
+        }
+    }
+}
+```
+
+调用fullTryAcquireShared失败则调用doAcquireShared将当前线程加入等待对列
+
+```java
+
+private void doAcquireShared(int arg) {
+    final Node node = addWaiter(Node.SHARED); //以共享模式创建节点
+    boolean interrupted = false;
+    try {
+        for (;;) {
+            final Node p = node.predecessor(); 
+            if (p == head) {
+                int r = tryAcquireShared(arg); //再次尝试获取读锁
+                if (r >= 0) {
+                    setHeadAndPropagate(node, r); //成功获取锁则将当前节点设为头结点，并唤醒后继共享模式节点，在semphare中已经分析过该方法
+                    p.next = null; // help GC
+                    return;
+                }
+            }
+            if (shouldParkAfterFailedAcquire(p, node))
+                interrupted |= parkAndCheckInterrupt();
+        }
+    } catch (Throwable t) {
+        cancelAcquire(node);
+        throw t;
+    } finally {
+        if (interrupted)
+            selfInterrupt();
+    }
+}
+```
+
+### 读锁解锁
+
+```java
+public final boolean releaseShared(int arg) {
+    if (tryReleaseShared(arg)) {
+        doReleaseShared();
+        return true;
+    }
+    return false;
+}
+```
+
+```java
+protected final boolean tryReleaseShared(int unused) {
+    Thread current = Thread.currentThread();
+    if (firstReader == current) {
+        // assert firstReaderHoldCount > 0;
+        if (firstReaderHoldCount == 1)//当前线程如果是第一个获取读锁的线程并且只持有一个锁
+            firstReader = null;
+        else
+            firstReaderHoldCount--;
+    } else {//不是当前锁获取的第一个读锁
+        HoldCounter rh = cachedHoldCounter; 
+        if (rh == null ||
+            rh.tid != LockSupport.getThreadId(current))
+            rh = readHolds.get(); //获取本地线程的读锁数量
+        int count = rh.count;
+        if (count <= 1) {
+            readHolds.remove();
+            if (count <= 0)
+                throw unmatchedUnlockException();
+        }
+        --rh.count; //本地线程读锁持有量减一
+    }
+    for (;;) {
+        int c = getState();
+        int nextc = c - SHARED_UNIT;
+        if (compareAndSetState(c, nextc)) //释放state
+            // Releasing the read lock has no effect on readers,
+            // but it may allow waiting writers to proceed if
+            // both read and write locks are now free.
+            return nextc == 0;
+    }
+}
+```
+
+释放成功调用doReleaseShared释放后继可能或已有的共享节点。
+
+
 
