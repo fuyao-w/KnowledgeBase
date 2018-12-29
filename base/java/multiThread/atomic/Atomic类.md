@@ -184,3 +184,139 @@ public final boolean compareAndSet(T obj, V expect, V update) {
 }
 ```
 
+## ABA问题
+
+ABA现象经常出现，特别是在使用类似compareAndSet()这种条件同步操作的动态内存算法中。典型的情形是，一个将要被compareAndSet()从a变为b的引用又被变回为a。这样一来，即使对数据结构的影响已经产生，compareAndSet( )调用也将成功返回，但已不再是想要的结果。
+
+解决这个问题的一种直接办法就是对每个原子引用附上一个唯一一的时间戳。
+
+## AtomicMarkableReferences
+
+```java
+public class AtomicMarkableReference<V>
+```
+
+### java doc
+
+AtomicMarkableReference维护一个对象引用以及一个可以原子方式更新的标记位。
+实现说明：此实现通过创建表示 "boxed" [reference, boolean] 对的内部对象来维护可标记引用。
+
+### 分析
+
+AtomicMarkableReference通过将一个布尔值绑定到想要原子操作的数据实现了，版本的功能。
+
+```java
+private static class Pair<T> {
+    final T reference;
+    final boolean mark;
+    private Pair(T reference, boolean mark) {
+        this.reference = reference;
+        this.mark = mark;
+    }
+    static <T> Pair<T> of(T reference, boolean mark) {
+        return new Pair<T>(reference, mark);
+    }
+}
+```
+
+通过VarHandle更新pair
+
+```java
+// VarHandle mechanics
+private static final VarHandle PAIR;
+static {
+    try {
+        MethodHandles.Lookup l = MethodHandles.lookup();
+        PAIR = l.findVarHandle(AtomicMarkableReference.class, "pair",
+                               Pair.class);
+    } catch (ReflectiveOperationException e) {
+        throw new ExceptionInInitializerError(e);
+    }
+}
+```
+
+初始化
+
+```java
+public AtomicMarkableReference(V initialRef, boolean initialMark) {
+    pair = Pair.of(initialRef, initialMark);
+}
+```
+
+CAS
+
+```JAVA
+public boolean compareAndSet(V       expectedReference,
+                             V       newReference,
+                             boolean expectedMark,
+                             boolean newMark) {
+    Pair<V> current = pair;
+    return
+        expectedReference == current.reference &&
+        expectedMark == current.mark &&
+        ((newReference == current.reference &&
+          newMark == current.mark) ||
+         casPair(current, Pair.of(newReference, newMark)));
+}
+```
+
+```JAVA
+private boolean casPair(Pair<V> cmp, Pair<V> val) {
+    return PAIR.compareAndSet(this, cmp, val);
+}
+```
+
+## AtomicStampedReference
+
+```java
+AtomicStampedReference
+```
+
+### java doc
+
+AtomicStampedReference维护一个对象引用以及一个整数“标记”，可以原子方式更新。
+实现说明：此实现通过创建表示"boxed" [reference, integer] 对的内部对象来维护标记引用。
+
+### 分析
+
+AtomicStampedReference通过引入时间戳解决ABA的问题
+
+```java
+private static class Pair<T> {
+    final T reference;
+    final int stamp;
+    private Pair(T reference, int stamp) {
+        this.reference = reference;
+        this.stamp = stamp;
+    }
+    static <T> Pair<T> of(T reference, int stamp) {
+        return new Pair<T>(reference, stamp);
+    }
+}
+```
+
+将AtomicMarkableReference的布尔值，替换成了整形时间戳。
+
+```java
+public boolean compareAndSet(V   expectedReference,
+                             V   newReference,
+                             int expectedStamp,
+                             int newStamp) {
+    Pair<V> current = pair;
+    return
+        expectedReference == current.reference &&
+        expectedStamp == current.stamp &&
+        ((newReference == current.reference &&
+          newStamp == current.stamp) ||
+         casPair(current, Pair.of(newReference, newStamp)));
+}
+```
+
+```java
+private boolean casPair(Pair<V> cmp, Pair<V> val) {
+    return PAIR.compareAndSet(this, cmp, val);
+}
+```
+
+当时间戳不变的时候才可以更新变量值。
+
