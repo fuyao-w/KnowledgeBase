@@ -9,7 +9,7 @@ public final class Method extends Executable
 方法提供有关类或接口上的单个方法的信息和访问权限。 反射的方法可以是类方法或实例方法（包括抽象方法）。
 方法允许在将实际参数与基础方法的形式参数进行匹配时进行扩展转换，但如果发生缩小转换，则会抛出IllegalArgumentException。
 
-![](https://github.com/TransientWang/KnowledgeBase/tree/master/picture/Method类图.png)
+![反射类图](https://github.com/TransientWang/KnowledgeBase/tree/master/picture/Method类图.png)
 
 先看一下类图，最顶层的接口AnnotatedElement，是reflect包中所有类的顶层接口。作用是获取成员的注解信息。GenericDeclaration是声明类型变量的所有实体的通用接口，用于获取方法的参数信息。Member接口定义了获取成员的修饰符，名称，声明类，是否是由编译器引入的方法（由程序员编写，而不是jdk本身提供的）。
 
