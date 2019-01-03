@@ -140,13 +140,13 @@ AtomicReferenceFieldUpdaterImpl(final Class<T> tclass,
                 }
             });
         modifiers = field.getModifiers();
-        sun.reflect.misc.ReflectUtil.ensureMemberAccess(
+        sun.reflectx.misc.ReflectUtil.ensureMemberAccess(
             caller, tclass, null, modifiers);
         ClassLoader cl = tclass.getClassLoader();
         ClassLoader ccl = caller.getClassLoader();
         if ((ccl != null) && (ccl != cl) &&
             ((cl == null) || !isAncestor(cl, ccl))) {
-            sun.reflect.misc.ReflectUtil.checkPackageAccess(tclass);
+            sun.reflectx.misc.ReflectUtil.checkPackageAccess(tclass);
         }
         fieldClass = field.getType();
     } catch (PrivilegedActionException pae) {
