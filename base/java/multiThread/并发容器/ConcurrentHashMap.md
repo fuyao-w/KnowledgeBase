@@ -361,7 +361,7 @@ final Node<K,V>[] helpTransfer(Node<K,V>[] tab, Node<K,V> f) {
 }
 ```
 
-helpTransfer参数是table与正在转移的bin节点。
+helpTransfer参数是table与正在转移的bin节点。当条件满足的时候当前线程会帮助resize线程进行transfer操作。
 
 
 
@@ -435,9 +435,18 @@ private final void addCount(long x, int check) {
                (n = tab.length) < MAXIMUM_CAPACITY) {
             int rs = resizeStamp(n);
             if (sc < 0) {
-                if ((sc >>> RESIZE_STAMP_SHIFT) != rs || sc == rs + 1 ||
-                    sc == rs + MAX_RESIZERS || (nt = nextTable) == null ||
-                    transferIndex <= 0)
+                // 如果 sc 的低 16 位不等于 标识符（校验异常 sizeCtl 变化了）
+                // 如果 sc == 标识符 + 1 （扩容结束了，不再有线程进行扩容）（默认第一个线程设置 sc ==rs 左移 16 位 + 2，当第一个线程结束扩容了，就会将 sc 减一。这个时候，sc 就等于 rs + 1）
+                // 如果 sc == 标识符 + 65535（帮助线程数已经达到最大）
+                // 如果 nextTable == null（结束扩容了）
+                // 如果 transferIndex <= 0 (转移状态变化了)
+                // 结束循环
+
+                if ((sc >>> RESIZE_STAMP_SHIFT) != rs 
+                    || sc == rs + 1 
+                    ||sc == rs + MAX_RESIZERS 
+                    || (nt = nextTable) == null 
+                    ||transferIndex <= 0)
                     break;
                 if (U.compareAndSetInt(this, SIZECTL, sc, sc + 1))
                     transfer(tab, nt);
@@ -453,7 +462,19 @@ private final void addCount(long x, int check) {
 
 在没有竞争的情况下，baseCount字段被CAS设置加一。然后进入下一个判断，当baseCount+x（putVal里等于1L的时候）> sizeCtl 并且table不为null、table.length < MAXIMUM_CAPACITY的时候进入自旋。
 
-首先调用resizeStamp获取用于调整大小为n的表的大小的标记戳用于修改sizeCtl。在第一次进行扩容的时候返回值为32795。而且此时的sizeCtl值为12，所以会进入else if块里面将sizeCtl设置为一个负数，表示进入了resize阶段。
+首先调用resizeStamp获取用于调整大小为n的表的大小的标记戳用于修改sizeCtl。在第一次进行扩容的时候返回值为32795。而且此时的sizeCtl值为12，所以会进入else if块里面将sizeCtl设置为一个负数（`rs << RESIZE_STAMP_SHIFT) + 2`,现在为 -2145714174，这个负数有特殊的用途，如果将它无符号右移16位的话得到的值等于 32795 也就是它等于rs标记，在条件 sc < 0 进入的代码块里面会用到它），表示进入了resize阶段，然后调用transfer方法将数据由旧table转移到新table上。
+
+如果sizeCtl小于0则说明已经有其他线程在执行resize操作，那么当先线程可以帮助正在resize的线程transfer并将sizeCtl加一。但是首先会判断一些不用帮助transfer的情况。
+
+对于`(sc >>> RESIZE_STAMP_SHIFT) != rs `在上一段已经介绍过，他们两个在正常情况下应该相等，但是如果他们两个不相等的情况下说明sizeCtl字段已经被其他线程改变了有可能是扩容已经结束或者在Transfer里面出现了异常sizeCtl字段被设置为Integer.maxVal。
+
+`sc == rs + 1 `当tansfer已经扩容完毕的时候，会将
+
+sc == rs + MAX_RESIZERS 说明help transfer 线程已经达到了最大值
+
+(nt = nextTable) == null 说明nextTable字段为null的时候，不能帮助transfer。
+
+`transferIndex <= 0` ：transferIndex字段代表转移到nextTable的bin的索引，当它小于等于0的时候代表transfer操作已经完成
 
 
 
@@ -482,4 +503,14 @@ private final void addCount(long x, int check) {
         
 ```
 
+### 与HashMap的不同
+
+|                       HashMap                        |                      ConcurrentHashMap                       |
+| :--------------------------------------------------: | :----------------------------------------------------------: |
+|                  单线程，没有锁机制                  |             并发容器有自旋锁，Synchronized机制。             |
+| 初始化懒加载的时候使用threshold字段存储table初始化值 |      初始化懒加载的时候使用sizeCtl字段存储table初始化值      |
+|            使用加载因子作为控制扩容的工具            | 加载因子只会在构造方法中为初始table容量使用过一次，每次扩容过后都会将下一次的扩容阈值设置在sizeCtl字段中 |
+|          threshold由加载因子个table长度决定          | 没有threshold字段，类似的功能有sizeCtl代替，并且sizeCtl在扩容后是固定的被设置为原table长度的1.5倍 |
+|            由于不考虑多线程，没有特殊节点            | 由于是并发容器，有三个特殊的节点（hash值为负值）TreeBin，ForwardingNode和ReservationNode，帮助线程解决并发问题。 |
+|                                                      |                                                              |
 
