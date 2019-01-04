@@ -124,7 +124,7 @@ void afterNodeInsertion(boolean evict) { // possibly remove eldest
 }
 ```
 
-`afterNodeInsertion`是留给开发者使用的方法，`removeEldestEntry`方法默认返回false，如果想实现一个保留固定元素数量的缓存Map，可以继承LinkedHashMap实现`removeEldestEntry`，并在`put`方法中调用`afterNodeInsertion`。
+`afterNodeInsertion`是留给开发者使用的钩子方法，`removeEldestEntry`方法默认返回false，如果想实现一个保留固定元素数量的缓存Map，可以继承LinkedHashMap实现`removeEldestEntry`,判断当前持有元素数量是否已达到上限。
 
 ```
 void afterNodeAccess(Node<K,V> e) { // move node to last
