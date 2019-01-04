@@ -186,7 +186,7 @@ ConcurrentHashMaps支持一组顺序和并行批量操作，与大多数Stream�
     
     /**
      * 表初始化和调整大小控制。 当为负数时，表正在初始化或调整大小：-1表示初始化，
-     * 否则 - （1 +活动的调整线程数）。 否则，当table为null时，
+     * 否则 - （1 +活动的resize线程数）。 否则，当table为null时，
      * 保留要在创建时使用的初始表大小，或者默认为0。 初始化之后，
      * 保存下一个元素计数值，在该值上调整表的大小。
      */
@@ -435,12 +435,6 @@ private final void addCount(long x, int check) {
                (n = tab.length) < MAXIMUM_CAPACITY) {
             int rs = resizeStamp(n);
             if (sc < 0) {
-                // 如果 sc 的低 16 位不等于 标识符（校验异常 sizeCtl 变化了）
-                // 如果 sc == 标识符 + 1 （扩容结束了，不再有线程进行扩容）（默认第一个线程设置 sc ==rs 左移 16 位 + 2，当第一个线程结束扩容了，就会将 sc 减一。这个时候，sc 就等于 rs + 1）
-                // 如果 sc == 标识符 + 65535（帮助线程数已经达到最大）
-                // 如果 nextTable == null（结束扩容了）
-                // 如果 transferIndex <= 0 (转移状态变化了)
-                // 结束循环
 
                 if ((sc >>> RESIZE_STAMP_SHIFT) != rs 
                     || sc == rs + 1 
@@ -466,11 +460,9 @@ private final void addCount(long x, int check) {
 
 如果sizeCtl小于0则说明已经有其他线程在执行resize操作，那么当先线程可以帮助正在resize的线程transfer并将sizeCtl加一。但是首先会判断一些不用帮助transfer的情况。
 
-对于`(sc >>> RESIZE_STAMP_SHIFT) != rs `在上一段已经介绍过，他们两个在正常情况下应该相等，但是如果他们两个不相等的情况下说明sizeCtl字段已经被其他线程改变了有可能是扩容已经结束或者在Transfer里面出现了异常sizeCtl字段被设置为Integer.maxVal。
+对于`(sc >>> RESIZE_STAMP_SHIFT) != rs `在上一段已经介绍过，他们两个在正常情况下应该相等，但是如果他们两个不相等的情况下说明sizeCtl字段已经被其他线程改变了有可能是扩容已经结束或者在Transfer里面出现了异常sizeCtl字段被设置为Integer.maxVal	。
 
-`sc == rs + 1 `当tansfer已经扩容完毕的时候，会将
-
-sc == rs + MAX_RESIZERS 说明help transfer 线程已经达到了最大值
+`sc == rs + 1 `与`sc == rs + MAX_RESIZERS `的这两种情况，不用分析了因为它写错了，这是一个bug应该改为：`sc  ==  ( rs<<<RESIZE_STAMP_SHIFT ) +1 || sc  ==  ( rs<<<RESIZE_STAMP_SHIFT ) + MAX_RESIZERS`。该bug在https://bugs.java.com中通过bug ID:`JDK-8214427`可以找到
 
 (nt = nextTable) == null 说明nextTable字段为null的时候，不能帮助transfer。
 
