@@ -460,19 +460,280 @@ private final void addCount(long x, int check) {
 
 如果sizeCtl小于0则说明已经有其他线程在执行resize操作，那么当先线程可以帮助正在resize的线程transfer并将sizeCtl加一。但是首先会判断一些不用帮助transfer的情况。
 
-对于`(sc >>> RESIZE_STAMP_SHIFT) != rs `在上一段已经介绍过，他们两个在正常情况下应该相等，但是如果他们两个不相等的情况下说明sizeCtl字段已经被其他线程改变了有可能是扩容已经结束或者在Transfer里面出现了异常sizeCtl字段被设置为Integer.maxVal	。
+- 对于`(sc >>> RESIZE_STAMP_SHIFT) != rs `在上一段已经介绍过，他们两个在正常情况下应该相等，但是如果他们两个不相等的情况下说明sizeCtl字段已经被其他线程改变了有可能是扩容已经结束或者在Transfer里面出现了异常sizeCtl字段被设置为Integer.maxVal	。
 
-`sc == rs + 1 `与`sc == rs + MAX_RESIZERS `的这两种情况，不用分析了因为它写错了，这是一个bug应该改为：`sc  ==  ( rs<<<RESIZE_STAMP_SHIFT ) +1 || sc  ==  ( rs<<<RESIZE_STAMP_SHIFT ) + MAX_RESIZERS`。该bug在https://bugs.java.com中通过bug ID:`JDK-8214427`可以找到
 
-(nt = nextTable) == null 说明nextTable字段为null的时候，不能帮助transfer。
-
-`transferIndex <= 0` ：transferIndex字段代表转移到nextTable的bin的索引，当它小于等于0的时候代表transfer操作已经完成
-
+- `sc == rs + 1 `与`sc == rs + MAX_RESIZERS `的这两种情况，是一个bug应该改为：`（sc >>> RESIZE_STAMP_SHIFT）== rs + 1 || sc == (rs<<RESIZE_STAMP_SHIFT) + MAX_RESIZERS`。该bug在https://bugs.java.com中通过bug ID:`JDK-8214427`可以找到。
+  -   `（sc >>> RESIZE_STAMP_SHIFT）== rs + 1  `的情况是当resize线程transfer结束后，将nextTble的赋值给table。加入上次是16，那么现在应该是32，计算出来的rs(32794)值就会比扩容完成后的sc（在transfer中会将sizeCtl-1，但还没有重新将其赋值成`(n << 1) - (n >>> 1)`的时候）无符号右移16位的结果小1，证明已经扩容完毕。
+  - `sc == (rs<<RESIZE_STAMP_SHIFT) + MAX_RESIZERS`的情况是当有其他线程帮助transfer的时候会将sizeCtl+1，当帮助线程数量达到65533的时候就已经达到上限。
 
 
 
+- (nt = nextTable) == null 说明nextTable字段为null的时候，不能帮助transfer。
 
 
+- `transferIndex <= 0` ：transferIndex字段代表转移到nextTable的bin的索引，当它小于等于0的时候代表transfer操作已经完成
+
+如果上述问题都没有出现那么，那么当前线程就作为一个帮助线程将sizeCtl+1，然后调用`transfer`。
+
+```java
+private final void transfer(Node<K,V>[] tab, Node<K,V>[] nextTab) {
+    int n = tab.length, stride;
+    if ((stride = (NCPU > 1) ? (n >>> 3) / NCPU : n) < MIN_TRANSFER_STRIDE)
+        stride = MIN_TRANSFER_STRIDE; // subdivide range
+    if (nextTab == null) {            // initiating
+        try {
+            @SuppressWarnings("unchecked")
+            Node<K,V>[] nt = (Node<K,V>[])new Node<?,?>[n << 1];
+            nextTab = nt;
+        } catch (Throwable ex) {      // try to cope with OOME
+            sizeCtl = Integer.MAX_VALUE;
+            return;
+        }
+        nextTable = nextTab;
+        transferIndex = n;
+    }
+    int nextn = nextTab.length;
+    ForwardingNode<K,V> fwd = new ForwardingNode<K,V>(nextTab);
+    boolean advance = true;
+    boolean finishing = false; // to ensure sweep before committing nextTab
+    for (int i = 0, bound = 0;;) {
+        Node<K,V> f; int fh;
+        while (advance) {
+            int nextIndex, nextBound;
+            if (--i >= bound || finishing)
+                advance = false;
+            else if ((nextIndex = transferIndex) <= 0) {
+                i = -1;
+                advance = false;
+            }
+            else if (U.compareAndSetInt
+                     (this, TRANSFERINDEX, nextIndex,
+                      nextBound = (nextIndex > stride ?
+                                   nextIndex - stride : 0))) {
+                bound = nextBound;
+                i = nextIndex - 1;
+                advance = false;
+            }
+        }
+        if (i < 0 || i >= n || i + n >= nextn) {
+            int sc;
+            if (finishing) {
+                nextTable = null;
+                table = nextTab;
+                sizeCtl = (n << 1) - (n >>> 1);
+                return;
+            }
+            if (U.compareAndSetInt(this, SIZECTL, sc = sizeCtl, sc - 1)) {
+                if ((sc - 2) != resizeStamp(n) << RESIZE_STAMP_SHIFT)
+                    return;
+                finishing = advance = true;
+                i = n; // recheck before commit
+            }
+        }
+        else if ((f = tabAt(tab, i)) == null)
+            advance = casTabAt(tab, i, null, fwd);
+        else if ((fh = f.hash) == MOVED)
+            advance = true; // already processed
+        else {
+            synchronized (f) {
+                if (tabAt(tab, i) == f) {
+                    Node<K,V> ln, hn;
+                    if (fh >= 0) {
+                        int runBit = fh & n;
+                        Node<K,V> lastRun = f;
+                        for (Node<K,V> p = f.next; p != null; p = p.next) {
+                            int b = p.hash & n;
+                            if (b != runBit) {
+                                runBit = b;
+                                lastRun = p;
+                            }
+                        }
+                        if (runBit == 0) {
+                            ln = lastRun;
+                            hn = null;
+                        }
+                        else {
+                            hn = lastRun;
+                            ln = null;
+                        }
+                        for (Node<K,V> p = f; p != lastRun; p = p.next) {
+                            int ph = p.hash; K pk = p.key; V pv = p.val;
+                            if ((ph & n) == 0)
+                                ln = new Node<K,V>(ph, pk, pv, ln);
+                            else
+                                hn = new Node<K,V>(ph, pk, pv, hn);
+                        }
+                        setTabAt(nextTab, i, ln);
+                        setTabAt(nextTab, i + n, hn);
+                        setTabAt(tab, i, fwd);
+                        advance = true;
+                    }
+                    else if (f instanceof TreeBin) {
+                        TreeBin<K,V> t = (TreeBin<K,V>)f;
+                        TreeNode<K,V> lo = null, loTail = null;
+                        TreeNode<K,V> hi = null, hiTail = null;
+                        int lc = 0, hc = 0;
+                        for (Node<K,V> e = t.first; e != null; e = e.next) {
+                            int h = e.hash;
+                            TreeNode<K,V> p = new TreeNode<K,V>
+                                (h, e.key, e.val, null, null);
+                            if ((h & n) == 0) {
+                                if ((p.prev = loTail) == null)
+                                    lo = p;
+                                else
+                                    loTail.next = p;
+                                loTail = p;
+                                ++lc;
+                            }
+                            else {
+                                if ((p.prev = hiTail) == null)
+                                    hi = p;
+                                else
+                                    hiTail.next = p;
+                                hiTail = p;
+                                ++hc;
+                            }
+                        }
+                        ln = (lc <= UNTREEIFY_THRESHOLD) ? untreeify(lo) :
+                            (hc != 0) ? new TreeBin<K,V>(lo) : t;
+                        hn = (hc <= UNTREEIFY_THRESHOLD) ? untreeify(hi) :
+                            (lc != 0) ? new TreeBin<K,V>(hi) : t;
+                        setTabAt(nextTab, i, ln);
+                        setTabAt(nextTab, i + n, hn);
+                        setTabAt(tab, i, fwd);
+                        advance = true;
+                    }
+                }
+            }
+        }
+    }
+}
+```
+
+transfer的代码很长，但是可以分部分看
+
+```java
+int n = tab.length, stride;
+if ((stride = (NCPU > 1) ? (n >>> 3) / NCPU : n) < MIN_TRANSFER_STRIDE)
+    stride = MIN_TRANSFER_STRIDE; // subdivide range		
+```
+stride是根据cpu核数做的优化，具体的优化措施在后面
+
+```java
+if (nextTab == null) {            // initiating
+    try {
+        @SuppressWarnings("unchecked")
+        Node<K,V>[] nt = (Node<K,V>[])new Node<?,?>[n << 1];
+        nextTab = nt;
+    } catch (Throwable ex) {      // try to cope with OOME
+        sizeCtl = Integer.MAX_VALUE;
+        return;
+    }
+    nextTable = nextTab;
+    transferIndex = n;
+}
+```
+
+如果传递进来的参数`nextTab`为null，则会创建新的nextTab数组，扩容大小为固定的2倍。如果出现异常则将sizeCtl值设置为Integer.MAX_VALUE。其他线程发现了就不会来帮助transfer。没有发生异常就会将新数组赋值给nextTable字段，同时将transferIndex字段设置为数组的长度。transferIndex字段用于确定从旧数组的transferIndex-1的位置开始执行transfer。
+
+```java
+int nextn = nextTab.length;
+ForwardingNode<K,V> fwd = new ForwardingNode<K,V>(nextTab);
+boolean advance = true;
+boolean finishing = false; // to ensure sweep before committing nextTab
+for (int i = 0, bound = 0;;) {
+    Node<K,V> f; int fh;
+    while (advance) {
+        int nextIndex, nextBound;
+        if (--i >= bound || finishing)
+            advance = false;
+        else if ((nextIndex = transferIndex) <= 0) {
+            i = -1;
+            advance = false;
+        }
+        else if (U.compareAndSetInt
+                 (this, TRANSFERINDEX, nextIndex,
+                  nextBound = (nextIndex > stride ?
+                               nextIndex - stride : 0))) {
+            bound = nextBound;
+            i = nextIndex - 1;
+            advance = false;
+        }
+    }
+```
+
+接下来首先确认了nextTable的长度，现在应该为32。然后创建了一个`ForwardingNode`，同时将nextTable的引用交给这个节点。这个节点的作用是通知其他线程ConcurrentHashMap正在resize可以帮助transfer。
+
+然后又创建了两个变量`advance`和`finished`,第一个变量用于下面的while循环控制，第二个变量用于确认transfer是否完成，具体的transfer过程在自旋中完成，while循环有三种作用，负责transfer开始与结束时控制，转移节点时的索引位置控制。第一个`if`块控制transfer索引的位置，或者transfer操作是否已经完成，变量`i`代表transfer节点所在旧数组上的索引位置，只要`i`大于`bound`就会抵减。同时进入if里面会将advance设置为false。这样程序就会推出while循环执行下面的transfer逻辑。第二个`else if`块确定transfer首先开始的索引位置，nextIndex被赋值为transferIndex，如果它小于0，说明transfer结束，进入代码块中将`i`设置为 -1、advance字段设置为false。然后程序跳出while循环进入下面的结束逻辑中。第三个`else if`将transferIndex设置为`nextIndex - stride`或者为0，这里就用到了开始的stride，如果nextIndex大于stride 那么transferIndex就被设置为`nextIndex - stride`，这时候transferIndex不为0，其他线程如果发现正在resize 则户判断transfer是否 `<=0`，当比0大的时候就可以帮助transfer，并且从transferIndex-1位置开始帮助transfer节点,当目前容量小的时候，比如刚开始原数组长 16，这时候 stride也为16。这种情况下就不允许其他线程帮助transfer。进入代码块中将nextBound赋值给bound，作为当前线程transfer的结束索引。然后将`i`赋值为`nextIndex-1`、advance设置为false。然后程序跳出while循环正式开始transfer过程。
+
+```java
+if (i < 0 || i >= n || i + n >= nextn) {
+    int sc;
+    if (finishing) {
+        nextTable = null;
+        table = nextTab;
+        sizeCtl = (n << 1) - (n >>> 1);
+        return;
+    }
+    if (U.compareAndSetInt(this, SIZECTL, sc = sizeCtl, sc - 1)) {
+        if ((sc - 2) != resizeStamp(n) << RESIZE_STAMP_SHIFT)
+            return;
+        finishing = advance = true;
+        i = n; // recheck before commit
+    }
+}
+```
+
+每次真正执行transfer之前都会判断transfer是否结束，如果`finishing`字段为true则说明transfer已经结束，则进入代码块将nextTable置为null，然后将nextTab赋值给table，然后计算sizeCtl的值，默认为原数组长度的1.5倍。第二个`if`是在transfer结束时将sizeCtl的值减少1，代表一个线程transfer完毕。然后代码块中判断sizeCtl是否有过变化，如果再此期间又有别的线程修改了sizeCtl，则剩下的工作交给后面的线程处理。如果没有其他线程处理，则自己处理。将finishing和advance都设为true,然后将`i`设置为n，目的是保守的重新检查一遍，是否所有节点都已经转移。如果没有则还会执行转移操作。在重新检查一遍结束后又会进入到该代码块，通过上一个`if`块结束transfer操作。
+
+```java
+else if ((f = tabAt(tab, i)) == null)
+    advance = casTabAt(tab, i, null, fwd);
+else if ((fh = f.hash) == MOVED)
+    advance = true; // already processed
+```
+
+现在开始了正式的transfer逻辑中，程序会判断`i`节点（现在为table长度 - 1）是否为null，如果为null则将该节点CAS为fwd，也就是ForwardingNode。其他线程在看到该索引位置节点为ForwardingNode后，就知道了正在resize过程中应该帮助transfer。如果CAS设置节点成功，则advance被赋值为true。然后进行下一次自旋，将`i`减去 1 ，继续执行下一个索引的transfer。如果不为null则会判断该索引位置的节点的hash值是否等于MOVED( -1)，如果hash值等于 -1 则说明该索引位置的节点已经有其他线程正在执行transfer操作。进入代码块将advance设置为true，然后进行下一次自旋继续处理下一个索引位置上的节点。
+
+```java
+else {
+    synchronized (f) {
+        if (tabAt(tab, i) == f) {
+            Node<K,V> ln, hn;
+            if (fh >= 0) {
+                int runBit = fh & n;
+                Node<K,V> lastRun = f;
+                for (Node<K,V> p = f.next; p != null; p = p.next) {
+                    int b = p.hash & n;
+                    if (b != runBit) {
+                        runBit = b;
+                        lastRun = p;
+                    }
+                }
+                if (runBit == 0) {
+                    ln = lastRun;
+                    hn = null;
+                }
+                else {
+                    hn = lastRun;
+                    ln = null;
+                }
+                for (Node<K,V> p = f; p != lastRun; p = p.next) {
+                    int ph = p.hash; K pk = p.key; V pv = p.val;
+                    if ((ph & n) == 0)
+                        ln = new Node<K,V>(ph, pk, pv, ln);
+                    else
+                        hn = new Node<K,V>(ph, pk, pv, hn);
+                }
+                setTabAt(nextTab, i, ln);
+                setTabAt(nextTab, i + n, hn);
+                setTabAt(tab, i, fwd);
+                advance = true;
+            }
+```
+
+如果上面的情况都没有出现则由当前线程自己进行节点的transfer操作，首先用synchronized代码块对原数组的`i`索引位置的节点上锁，然后重新判断节点有没有变化。确保在上锁期间没有别的线程操作，
 
 ### 树操作
 
@@ -497,12 +758,13 @@ private final void addCount(long x, int check) {
 
 ### 与HashMap的不同
 
-|                       HashMap                        |                      ConcurrentHashMap                       |
-| :--------------------------------------------------: | :----------------------------------------------------------: |
-|                  单线程，没有锁机制                  |             并发容器有自旋锁，Synchronized机制。             |
-| 初始化懒加载的时候使用threshold字段存储table初始化值 |      初始化懒加载的时候使用sizeCtl字段存储table初始化值      |
-|            使用加载因子作为控制扩容的工具            | 加载因子只会在构造方法中为初始table容量使用过一次，每次扩容过后都会将下一次的扩容阈值设置在sizeCtl字段中 |
-|          threshold由加载因子个table长度决定          | 没有threshold字段，类似的功能有sizeCtl代替，并且sizeCtl在扩容后是固定的被设置为原table长度的1.5倍 |
-|            由于不考虑多线程，没有特殊节点            | 由于是并发容器，有三个特殊的节点（hash值为负值）TreeBin，ForwardingNode和ReservationNode，帮助线程解决并发问题。 |
-|                                                      |                                                              |
+|                           HashMap                            |                      ConcurrentHashMap                       |
+| :----------------------------------------------------------: | :----------------------------------------------------------: |
+|                      单线程，没有锁机制                      |             并发容器有自旋锁，Synchronized机制。             |
+|     初始化懒加载的时候使用threshold字段存储table初始化值     |      初始化懒加载的时候使用sizeCtl字段存储table初始化值      |
+|                使用加载因子作为控制扩容的工具                | 加载因子只会在构造方法中为初始table容量使用过一次，每次扩容过后都会将下一次的扩容阈值设置在sizeCtl字段中 |
+|              threshold由加载因子个table长度决定              | 没有threshold字段，类似的功能有sizeCtl代替，并且sizeCtl在扩容后是固定的被设置为原table长度的1.5倍 |
+|                由于不考虑多线程，没有特殊节点                | 由于是并发容器，有三个特殊的节点（hash值为负值）TreeBin，ForwardingNode和ReservationNode，帮助线程解决并发问题。 |
+| 为单线程设计，扩容逻辑没有ConcurrentHashMap复杂，单线程情况下性能也更好。 | 在扩容的时候，不进逻辑比HashMap更加复杂，并且还会保守的在transfer过后重进检查以确定是否全不transfer完毕。只在单线程的情况下，性能比HashMap相差较大，但是可以有其他线程帮助transfer。 |
+|                                                              |                                                              |
 
