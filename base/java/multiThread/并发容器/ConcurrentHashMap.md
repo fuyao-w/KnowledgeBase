@@ -363,8 +363,6 @@ final Node<K,V>[] helpTransfer(Node<K,V>[] tab, Node<K,V> f) {
 
 helpTransfer参数是table与正在转移的bin节点。当条件满足的时候当前线程会帮助resize线程进行transfer操作。
 
-
-
 如果当前节点没有在transfer状态，则会继续判断`onlyIfAbsent`是否为ture。这个参数在putIfAbsent方法中才会为true，如果在Map中已经存在key并且value不为null，则会直接返回value值，而不执行插入操作。
 
 如果onlyIfAbsent为fasle，则证明当前table上的bin不为null,此时插入操作，应该向以bin为头结点的链表上执行插入操作。首先使用Synchronized代码块锁住table上的bin，也就是锁住链表的头结点。在锁住bin后还需要重新判断当前位置的bin有没有变化而且bin的hash值 > 0（bin不是特殊节点）。真正的插入操作还是在一个自旋中进行的并且使用binCount字段计数当亲链表的长度，当超过一定的阈值后会在插入成功后将链表转化成树。
@@ -392,7 +390,7 @@ helpTransfer参数是table与正在转移的bin节点。当条件满足的时候
 
    当节点的hash值相等并且key值也相等的时候，会判断是否是`putIfAbsent`方法，如果onlyIfAbsent为false，则直接替换节点value值并跳出返回。如果遍历到链表末尾，e为null的时候说明bin的链表中没有插入的key值，应该新建一个节点并且插入到链表末尾。
 
-2.  第二种遇到树的情况在插入后树化的时候再具体分析，在调用`TreeBin.putTreeVal`进行树的插入操作后如果新插入节点则返回空值，如果树种已经有与key相同的节点，则返回该节点并在onlyIfAbsent为false的时候进行替换。
+2.  第二种遇到树的情况，在调用`TreeBin.putTreeVal`进行树的插入操作后如果新插入节点则返回空值，如果树种已经有与key相同的节点，则返回该节点并在onlyIfAbsent为false的时候进行替换。
 
    ```java
    else if (f instanceof TreeBin) {
@@ -407,9 +405,81 @@ helpTransfer参数是table与正在转移的bin节点。当条件满足的时候
    }
    ```
 
+
+   ```java
+    final TreeNode<K,V> putTreeVal(int h, K k, V v) {
+        Class<?> kc = null;
+        boolean searched = false;
+        for (TreeNode<K,V> p = root;;) {
+            int dir, ph; K pk;
+            if (p == null) {
+                first = root = new TreeNode<K,V>(h, k, v, null, null);
+                break;
+            }
+            else if ((ph = p.hash) > h)
+                dir = -1;
+            else if (ph < h)
+                dir = 1;
+            else if ((pk = p.key) == k || (pk != null && k.equals(pk)))
+                return p;
+            else if ((kc == null &&
+                      (kc = comparableClassFor(k)) == null) ||
+                     (dir = compareComparables(kc, k, pk)) == 0) {
+                if (!searched) {
+                    TreeNode<K,V> q, ch;
+                    searched = true;
+                    if (((ch = p.left) != null &&
+                         (q = ch.findTreeNode(h, k, kc)) != null) ||
+                        ((ch = p.right) != null &&
+                         (q = ch.findTreeNode(h, k, kc)) != null))
+                        return q;
+                }
+                dir = tieBreakOrder(k, pk);
+            }
+    
+            TreeNode<K,V> xp = p;
+            if ((p = (dir <= 0) ? p.left : p.right) == null) {
+                TreeNode<K,V> x, f = first;
+                first = x = new TreeNode<K,V>(h, k, v, f, xp);
+                if (f != null)
+                    f.prev = x;
+                if (dir <= 0)
+                    xp.left = x;
+                else
+                    xp.right = x;
+                if (!xp.red)
+                    x.red = true;
+                else {
+                    lockRoot();
+                    try {
+                        root = balanceInsertion(root, x);
+                    } finally {
+                        unlockRoot();
+                    }
+                }
+                break;
+            }
+        }
+        assert checkInvariants(root);
+        return null;
+    }
+   ```
+
+   由于红黑树结构特殊，在插入的时候会进行旋转，root节点很有可能会改变。所以在插入的时候会将TreeBin锁住，而其他在锁住期间想操作树的线程会被阻塞。
+
+```java
+private final void lockRoot() {
+    if (!U.compareAndSetInt(this, LOCKSTATE, 0, WRITER))
+        contendedLock(); // offload to separate method
+}
+```
+
+`lockRoot`会将lockState字段 CAS 设置为WRITER。在插入完成后将新root赋值给TreeBIn的Root字段。
+
+
 3. 最后一种情况时遇到`ReservationNode`节点的时候直接抛出异常。
 
-在插入成功后判断binCount是否超过了`TREEIFY_THRESHOLD`，则会进行树化，在树化结束后，如果oldVal不为null则证明是替换了旧值，不用跳出自旋执行addCount直接返回，否则跳出自旋执行addCount。
+在插入成功后判断binCount是否超过了`TREEIFY_THRESHOLD`，则会进行树化，转换成树的时候要对该索引上锁。并且会判断数组长度是否小于`MIN_TREEIFY_CAPACITY`（64），如果小于64则会调用`tryPresize`提前扩容，在树化结束后，如果oldVal不为null则证明是替换了旧值，不用跳出自旋执行addCount直接返回，否则跳出自旋执行addCount。
 
 ```java
 private final void addCount(long x, int check) {
@@ -733,11 +803,47 @@ else {
             }
 ```
 
-如果上面的情况都没有出现则由当前线程自己进行节点的transfer操作，首先用synchronized代码块对原数组的`i`索引位置的节点上锁，然后重新判断节点有没有变化。确保在上锁期间没有别的线程操作，
+如果上面的情况都没有出现则由当前线程自己进行节点的transfer操作，首先用synchronized代码块对原数组的`i`索引位置的节点上锁，然后重新判断节点有没有变化和节点hash值大于等于0。确保在上锁期间没有别的线程操作并且该节点不是Treebins。首先计算节点的hash值与原数组长度的按位与`int runBit = fh & n`然后将当前节点赋值给变量`lastRun`,接下来进入一个循环，该循环的起始条件是节点`f`（索引位置上的节点）还有next节点（该索引上是一个链表）。如果有的话则进入循环，初始节点为`f`的next节点`p`。在循环里面先记录`p`节点的hash值与数组长度n的按位与`int b = p.hash & n;`如果`b`与之前记录的`runBit`不同则更新runBit与lastRun。退出循环后判断如果runBit不为0，则将lastRun节点赋值给变量`ln`，`ln`代表移动到新数组上的原位置的节点。并将`hn`赋null，`hn`代表原数组移动到新数组上原数组长度以外的索引位置。如果runBit不为0说明链表上的某一节点应该转移到新的位置上去，则将`hn`赋值为lastRun同时将`ln`赋值为null。然后又会遇到一个循环，这个循环进入的条件是该索引上是链表并且有节点要移动到新的位置上。初始节点为根节点，沿着链表遍历，如果根节点的hash值`(ph & n) == 0`则将节点安放在原位置索引上，反之安放在新的索引位置上。当链表遍历过后在将`ln` CAS 到新数组相对于旧数组原来的位置上，将`hn` CAS 到新数组相对于原数组长度以外的位置上。再将原数组该索引位置赋值为ForwardingNode，用于通知其他线程ConcurrentHashMap正在resize。最后将advance赋值为 true 再次循环移动索引的位置，继续transfer。
 
-### 树操作
+```java
+else if (f instanceof TreeBin) {
+    TreeBin<K,V> t = (TreeBin<K,V>)f;
+    TreeNode<K,V> lo = null, loTail = null;
+    TreeNode<K,V> hi = null, hiTail = null;
+    int lc = 0, hc = 0;
+    for (Node<K,V> e = t.first; e != null; e = e.next) {
+        int h = e.hash;
+        TreeNode<K,V> p = new TreeNode<K,V>
+            (h, e.key, e.val, null, null);
+        if ((h & n) == 0) {
+            if ((p.prev = loTail) == null)
+                lo = p;
+            else
+                loTail.next = p;
+            loTail = p;
+            ++lc;
+        }
+        else {
+            if ((p.prev = hiTail) == null)
+                hi = p;
+            else
+                hiTail.next = p;
+            hiTail = p;
+            ++hc;
+        }
+    }
+    ln = (lc <= UNTREEIFY_THRESHOLD) ? untreeify(lo) :
+        (hc != 0) ? new TreeBin<K,V>(lo) : t;
+    hn = (hc <= UNTREEIFY_THRESHOLD) ? untreeify(hi) :
+        (lc != 0) ? new TreeBin<K,V>(hi) : t;
+    setTabAt(nextTab, i, ln);
+    setTabAt(nextTab, i + n, hn);
+    setTabAt(tab, i, fwd);
+    advance = true;
+}
+```
 
-当bin是TreeBin的实例代表table上该索引处是红黑树，TreeBin只在table索引上使用，值持有树的根节点和相应的锁信息。
+如果在该索引位置上不是链表而是`TreeBin`，则代表该索引上是一颗树。
 
 ```java
   /**
@@ -756,6 +862,54 @@ else {
         
 ```
 
+当bin是TreeBin的实例代表table上该索引处是红黑树，TreeBin只在table索引上使用，只持有树的根节点和相应的锁信息。
+
+```java
+static final class TreeNode<K,V> extends Node<K,V> {
+    TreeNode<K,V> parent;  // red-black tree links
+    TreeNode<K,V> left;
+    TreeNode<K,V> right;
+    TreeNode<K,V> prev;    // needed to unlink next upon deletion
+    boolean red;
+    TreeNode(int hash, K key, V val, Node<K,V> next,
+             TreeNode<K,V> parent) {
+        super(hash, key, val, next);
+        this.parent = parent;
+    }
+```
+
+红黑树的节点只存储结构信息，不存储控制信息。并且也持有next指针，迭代器可以向遍历链表一样遍历树。first 指针指向该索引上的第一个节点，因为有这两个指针。在transfer的时候可以像链表一样处理节点，最后将新旧位置的节点创建新的两棵树，并CAS 到相应的位置上。
+
+
+
+## get()
+
+```java
+public V get(Object key) {
+    Node<K,V>[] tab; Node<K,V> e, p; int n, eh; K ek;
+    int h = spread(key.hashCode());
+    if ((tab = table) != null && (n = tab.length) > 0 &&
+        (e = tabAt(tab, (n - 1) & h)) != null) {
+        if ((eh = e.hash) == h) {
+            if ((ek = e.key) == key || (ek != null && key.equals(ek)))
+                return e.val;
+        }
+        else if (eh < 0)
+            return (p = e.find(h, key)) != null ? p.val : null;
+        while ((e = e.next) != null) {
+            if (e.hash == h &&
+                ((ek = e.key) == key || (ek != null && key.equals(ek))))
+                return e.val;
+        }
+    }
+    return null;
+}
+```
+
+get操作是幂等性操作，不会改变table结构，并且得益于TreeNode中也有next指针，索引遍历的时候只通过next指针就可以找到节点，在遇到table正在resize的时候，通过不同类型节点重写的`find`方法就可以该索引中找到对应的节点。
+
+
+
 ### 与HashMap的不同
 
 |                           HashMap                            |                      ConcurrentHashMap                       |
@@ -763,8 +917,8 @@ else {
 |                      单线程，没有锁机制                      |             并发容器有自旋锁，Synchronized机制。             |
 |     初始化懒加载的时候使用threshold字段存储table初始化值     |      初始化懒加载的时候使用sizeCtl字段存储table初始化值      |
 |                使用加载因子作为控制扩容的工具                | 加载因子只会在构造方法中为初始table容量使用过一次，每次扩容过后都会将下一次的扩容阈值设置在sizeCtl字段中 |
-|              threshold由加载因子个table长度决定              | 没有threshold字段，类似的功能有sizeCtl代替，并且sizeCtl在扩容后是固定的被设置为原table长度的1.5倍 |
+|              threshold由加载因子和table长度决定              | 没有threshold字段，类似的功能有sizeCtl代替，并且sizeCtl在扩容后是固定的被设置为原table长度的1.5倍 |
 |                由于不考虑多线程，没有特殊节点                | 由于是并发容器，有三个特殊的节点（hash值为负值）TreeBin，ForwardingNode和ReservationNode，帮助线程解决并发问题。 |
 | 为单线程设计，扩容逻辑没有ConcurrentHashMap复杂，单线程情况下性能也更好。 | 在扩容的时候，不进逻辑比HashMap更加复杂，并且还会保守的在transfer过后重进检查以确定是否全不transfer完毕。只在单线程的情况下，性能比HashMap相差较大，但是可以有其他线程帮助transfer。 |
-|                                                              |                                                              |
+|                    TreeNode直接作为根节点                    | 在链表点转换成树的时候需要有一个TreeBin节点作为索引上的节点，进行同步控制而不是TreeNode直接作为根节点 |
 
