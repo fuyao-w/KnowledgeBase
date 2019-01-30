@@ -204,7 +204,7 @@ BeanFactoryPostProcessor实现，允许方便地注册自定义属性编辑器�
 
 ### PropertyResourceConfigurer
 
-可以从文件添加Property ，并处理。
+可以从文件添加 Property，并且可以对 properties 进行处理。
 
 允许从属性资源（即属性文件）配置各个 bean 属性值。 对于以系统管理员为目标的自定义配置文件非常有用，这些文件覆盖在应用程
 
@@ -214,3 +214,26 @@ PropertyOverrideConfigurer 用于“beanName.property = value”样式重写（�
 PropertyPlaceholderConfigurer 用于替换“$ {...}”占位符（将属性文件中的值拉入bean定义）
 
 通过重写 `convertPropertyValue（java.lang.String） `方法，可以在读取属性值后转换它们。 例如，可以在处理加密值之前相应地检测和解密加密值。
+
+### PropertyOverrideConfigurer
+
+属性资源配置器，它覆盖应用程序上下文定义中的bean属性值。 它将属性文件中的值推送到bean定义中。
+配置行应具有以下形式：
+
+```properties
+beanName.property=value
+```
+
+Example properties file:
+
+```properties
+dataSource.driverClassName=com.mysql.jdbc.Driver
+ dataSource.url=jdbc:mysql:mydb
+```
+
+与PropertyPlaceholderConfigurer相比，原始定义对于此类bean属性可以具有默认值或根本没有值。 如果覆盖属性文件没有某个bean属性的条目，则使用默认上下文定义。
+请注意，上下文定义不知道被覆盖; 因此，在查看XML定义文件时，这并不是很明显。 此外，请注意指定的覆盖值始终是文字值; 它们不会被翻译成bean引用。 当XML bean定义中的原始值指定bean引用时，这也适用。
+
+如果多个PropertyOverrideConfigurers为同一个bean属性定义不同的值，则最后一个将获胜（由于重写机制）。
+
+通过覆盖convertPropertyValue方法，可以在读取属性值后转换它们。 例如，可以在处理加密值之前相应地检测和解密加密值。
