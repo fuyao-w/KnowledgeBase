@@ -1,0 +1,155 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Diagram>
+  <ID>JAVA</ID>
+  <OriginalElement>org.springframework.beans.factory.support</OriginalElement>
+  <nodes>
+    <node x="785.0" y="475.0">org.springframework.beans.factory.support.RootBeanDefinition</node>
+    <node x="366.0" y="1010.0">org.springframework.beans.factory.support.AutowireUtils</node>
+    <node x="653.0" y="935.0">org.springframework.beans.factory.support.ManagedProperties</node>
+    <node x="969.0" y="860.0">org.springframework.beans.factory.support.BeanDefinitionResource</node>
+    <node x="224.0" y="935.0">org.springframework.beans.factory.support.BeanDefinitionBuilder</node>
+    <node x="862.0" y="935.0">org.springframework.beans.factory.support.MethodOverrides</node>
+    <node x="614.0" y="785.0">org.springframework.beans.factory.support.BeanDefinitionValidationException</node>
+    <node x="0.0" y="555.0">org.springframework.beans.factory.support.CglibSubclassingInstantiationStrategy</node>
+    <node x="0.0" y="935.0">org.springframework.beans.factory.support.BeanDefinitionDefaults</node>
+    <node x="0.0" y="860.0">org.springframework.beans.factory.support.AutowireCandidateQualifier</node>
+    <node x="353.0" y="710.0">org.springframework.beans.factory.support.SimpleSecurityContextProvider</node>
+    <node x="775.0" y="395.0">org.springframework.beans.factory.support.AbstractBeanDefinition</node>
+    <node x="286.0" y="240.0">org.springframework.beans.factory.support.BeanDefinitionRegistry</node>
+    <node x="316.0" y="475.0">org.springframework.beans.factory.support.AbstractBeanDefinitionReader</node>
+    <node x="623.0" y="710.0">org.springframework.beans.factory.support.DefaultBeanNameGenerator</node>
+    <node x="165.0" y="710.0">org.springframework.beans.factory.support.LookupOverride</node>
+    <node x="310.0" y="555.0">org.springframework.beans.factory.support.PropertiesBeanDefinitionReader</node>
+    <node x="886.0" y="630.0">org.springframework.beans.factory.support.ManagedList</node>
+    <node x="628.25" y="0.0">org.springframework.beans.factory.support.AutowireCandidateResolver</node>
+    <node x="29.5" y="475.0">org.springframework.beans.factory.support.SimpleInstantiationStrategy</node>
+    <node x="608.75" y="80.0">org.springframework.beans.factory.support.SimpleAutowireCandidateResolver</node>
+    <node x="49.5" y="160.0">org.springframework.beans.factory.support.AbstractBeanFactory</node>
+    <node x="442.0" y="935.0">org.springframework.beans.factory.support.ConstructorResolver</node>
+    <node x="880.0" y="710.0">org.springframework.beans.factory.support.ManagedArray</node>
+    <node x="965.0" y="475.0">org.springframework.beans.factory.support.ChildBeanDefinition</node>
+    <node x="49.0" y="395.0">org.springframework.beans.factory.support.InstantiationStrategy</node>
+    <node x="0.0" y="1010.0">org.springframework.beans.factory.support.MethodReplacer</node>
+    <node x="905.0" y="785.0">org.springframework.beans.factory.support.BeanDefinitionValueResolver</node>
+    <node x="735.0" y="860.0">org.springframework.beans.factory.support.DisposableBeanAdapter</node>
+    <node x="23.5" y="0.0">org.springframework.beans.factory.support.DefaultSingletonBeanRegistry</node>
+    <node x="190.0" y="1010.0">org.springframework.beans.factory.support.ManagedMap</node>
+    <node x="82.0" y="630.0">org.springframework.beans.factory.support.MethodOverride</node>
+    <node x="535.0" y="1010.0">org.springframework.beans.factory.support.ManagedSet</node>
+    <node x="311.25" y="320.0">org.springframework.beans.factory.support.SimpleBeanDefinitionRegistry</node>
+    <node x="574.25" y="160.0">org.springframework.beans.factory.support.GenericTypeAwareAutowireCandidateResolver</node>
+    <node x="0.0" y="710.0">org.springframework.beans.factory.support.ReplaceOverride</node>
+    <node x="589.0" y="475.0">org.springframework.beans.factory.support.GenericBeanDefinition</node>
+    <node x="496.0" y="860.0">org.springframework.beans.factory.support.StaticListableBeanFactory</node>
+    <node x="0.0" y="785.0">org.springframework.beans.factory.support.BeanDefinitionRegistryPostProcessor</node>
+    <node x="26.5" y="80.0">org.springframework.beans.factory.support.FactoryBeanRegistrySupport</node>
+    <node x="0.0" y="240.0">org.springframework.beans.factory.support.AbstractAutowireCapableBeanFactory</node>
+    <node x="252.0" y="860.0">org.springframework.beans.factory.support.BeanDefinitionReaderUtils</node>
+    <node x="372.5" y="630.0">org.springframework.beans.factory.support.SecurityContextProvider</node>
+    <node x="340.0" y="395.0">org.springframework.beans.factory.support.BeanDefinitionReader</node>
+    <node x="643.5" y="630.0">org.springframework.beans.factory.support.BeanNameGenerator</node>
+    <node x="82.0" y="320.0">org.springframework.beans.factory.support.DefaultListableBeanFactory</node>
+    <node x="307.0" y="785.0">org.springframework.beans.factory.support.MergedBeanDefinitionPostProcessor</node>
+  </nodes>
+  <notes />
+  <edges>
+    <edge source="org.springframework.beans.factory.support.GenericBeanDefinition" target="org.springframework.beans.factory.support.AbstractBeanDefinition">
+      <point x="0.0" y="-15.0" />
+      <point x="677.0" y="450.0" />
+      <point x="805.0" y="450.0" />
+      <point x="-60.0" y="15.0" />
+    </edge>
+    <edge source="org.springframework.beans.factory.support.FactoryBeanRegistrySupport" target="org.springframework.beans.factory.support.DefaultSingletonBeanRegistry">
+      <point x="0.0" y="-15.0" />
+      <point x="0.0" y="15.0" />
+    </edge>
+    <edge source="org.springframework.beans.factory.support.SimpleAutowireCandidateResolver" target="org.springframework.beans.factory.support.AutowireCandidateResolver">
+      <point x="0.0" y="-15.0" />
+      <point x="0.0" y="15.0" />
+    </edge>
+    <edge source="org.springframework.beans.factory.support.SimpleSecurityContextProvider" target="org.springframework.beans.factory.support.SecurityContextProvider">
+      <point x="0.0" y="-15.0" />
+      <point x="0.0" y="15.0" />
+    </edge>
+    <edge source="org.springframework.beans.factory.support.CglibSubclassingInstantiationStrategy" target="org.springframework.beans.factory.support.SimpleInstantiationStrategy">
+      <point x="0.0" y="-15.0" />
+      <point x="0.0" y="15.0" />
+    </edge>
+    <edge source="org.springframework.beans.factory.support.PropertiesBeanDefinitionReader" target="org.springframework.beans.factory.support.AbstractBeanDefinitionReader">
+      <point x="0.0" y="-15.0" />
+      <point x="0.0" y="15.0" />
+    </edge>
+    <edge source="org.springframework.beans.factory.support.ManagedArray" target="org.springframework.beans.factory.support.ManagedList">
+      <point x="0.0" y="-15.0" />
+      <point x="0.0" y="15.0" />
+    </edge>
+    <edge source="org.springframework.beans.factory.support.GenericTypeAwareAutowireCandidateResolver" target="org.springframework.beans.factory.support.SimpleAutowireCandidateResolver">
+      <point x="0.0" y="-15.0" />
+      <point x="0.0" y="15.0" />
+    </edge>
+    <edge source="org.springframework.beans.factory.support.AbstractBeanFactory" target="org.springframework.beans.factory.support.FactoryBeanRegistrySupport">
+      <point x="0.0" y="-15.0" />
+      <point x="0.0" y="15.0" />
+    </edge>
+    <edge source="org.springframework.beans.factory.support.SimpleBeanDefinitionRegistry" target="org.springframework.beans.factory.support.BeanDefinitionRegistry">
+      <point x="0.0" y="-15.0" />
+      <point x="44.75" y="15.0" />
+    </edge>
+    <edge source="org.springframework.beans.factory.support.AbstractAutowireCapableBeanFactory" target="org.springframework.beans.factory.support.AbstractBeanFactory">
+      <point x="0.0" y="-15.0" />
+      <point x="0.0" y="15.0" />
+    </edge>
+    <edge source="org.springframework.beans.factory.support.SimpleInstantiationStrategy" target="org.springframework.beans.factory.support.InstantiationStrategy">
+      <point x="0.0" y="-15.0" />
+      <point x="0.0" y="15.0" />
+    </edge>
+    <edge source="org.springframework.beans.factory.support.ChildBeanDefinition" target="org.springframework.beans.factory.support.AbstractBeanDefinition">
+      <point x="0.0" y="-15.0" />
+      <point x="1045.5" y="450.0" />
+      <point x="925.0" y="450.0" />
+      <point x="60.0" y="15.0" />
+    </edge>
+    <edge source="org.springframework.beans.factory.support.AbstractBeanDefinitionReader" target="org.springframework.beans.factory.support.BeanDefinitionReader">
+      <point x="0.0" y="-15.0" />
+      <point x="0.0" y="15.0" />
+    </edge>
+    <edge source="org.springframework.beans.factory.support.ReplaceOverride" target="org.springframework.beans.factory.support.MethodOverride">
+      <point x="0.0" y="-15.0" />
+      <point x="72.5" y="685.0" />
+      <point x="118.25" y="685.0" />
+      <point x="-36.25" y="15.0" />
+    </edge>
+    <edge source="org.springframework.beans.factory.support.LookupOverride" target="org.springframework.beans.factory.support.MethodOverride">
+      <point x="0.0" y="-15.0" />
+      <point x="236.5" y="685.0" />
+      <point x="190.75" y="685.0" />
+      <point x="36.25" y="15.0" />
+    </edge>
+    <edge source="org.springframework.beans.factory.support.DefaultListableBeanFactory" target="org.springframework.beans.factory.support.AbstractAutowireCapableBeanFactory">
+      <point x="-51.0" y="-15.0" />
+      <point x="0.0" y="15.0" />
+    </edge>
+    <edge source="org.springframework.beans.factory.support.DefaultBeanNameGenerator" target="org.springframework.beans.factory.support.BeanNameGenerator">
+      <point x="0.0" y="-15.0" />
+      <point x="0.0" y="15.0" />
+    </edge>
+    <edge source="org.springframework.beans.factory.support.RootBeanDefinition" target="org.springframework.beans.factory.support.AbstractBeanDefinition">
+      <point x="0.0" y="-15.0" />
+      <point x="0.0" y="15.0" />
+    </edge>
+    <edge source="org.springframework.beans.factory.support.DefaultListableBeanFactory" target="org.springframework.beans.factory.support.BeanDefinitionRegistry">
+      <point x="51.0" y="-15.0" />
+      <point x="235.0" y="295.0" />
+      <point x="330.75" y="295.0" />
+      <point x="-44.75" y="15.0" />
+    </edge>
+  </edges>
+  <settings layout="Hierarchic Group" zoom="1.5207547169811326" x="246.88485330802513" y="266.0421836228287" />
+  <SelectedNodes>
+    <node>org.springframework.beans.factory.support.DefaultSingletonBeanRegistry</node>
+  </SelectedNodes>
+  <Categories />
+  <SCOPE>All</SCOPE>
+  <VISIBILITY>private</VISIBILITY>
+</Diagram>
+

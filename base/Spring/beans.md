@@ -204,7 +204,7 @@ BeanFactoryPostProcessor实现，允许方便地注册自定义属性编辑器�
 
 ### PropertyResourceConfigurer
 
-可以从文件添加 Property，并且可以对 properties 进行处理。
+可以从文件添加 Property，并且可以通过重写`convertPropertyValue`对 properties 进行转换处理。
 
 允许从属性资源（即属性文件）配置各个 bean 属性值。 对于以系统管理员为目标的自定义配置文件非常有用，这些文件覆盖在应用程
 
@@ -236,4 +236,301 @@ dataSource.driverClassName=com.mysql.jdbc.Driver
 
 如果多个PropertyOverrideConfigurers为同一个bean属性定义不同的值，则最后一个将获胜（由于重写机制）。
 
-通过覆盖convertPropertyValue方法，可以在读取属性值后转换它们。 例如，可以在处理加密值之前相应地检测和解密加密值。
+通过覆盖`convertPropertyValue`方法，可以在读取属性值后转换它们。 例如，可以在处理加密值之前相应地检测和解密加密值。
+
+### PlaceholderConfigurerSupport
+
+一个抽象类，用于解析配置文件占位符。
+
+属性资源配置器的抽象基类，用于解析bean定义属性值中的占位符。 实现将值从属性文件或其他属性源拉入bean定义。
+默认占位符语法遵循Ant / Log4J / JSP EL样式：
+
+```
+${...}
+```
+
+示例XML bean定义：
+
+```xml
+<bean id="dataSource"  class="org.springframework.jdbc.datasource.DriverManagerDataSource"/>
+   <property name="driverClassName" value="${driver}"/>
+   <property name="url" value="jdbc:${dbname}"/>
+ </bean>
+```
+
+示例属性文件：
+
+```properties
+driver=com.mysql.jdbc.Driver
+ dbname=mysql:mydb
+```
+
+带注释的bean定义可以使用`@Value`注释来利用属性替换：
+
+```java
+@Value("${person.age}")
+```
+
+实现检查bean引用中的简单属性值，列表，映射，道具和bean名称。 此外，占位符值还可以交叉引用其他占位符，例如：
+
+```xml
+rootPath=myrootdir
+subPath=${rootPath}/subdir
+```
+
+与`PropertyOverrideConfigurer`相比，此类型的子类允许在 bean 定义中填充显式占位符。
+如果配置程序无法解析占位符，则将抛出BeanDefinitionStoreException。 如果要检查多个属性文件，请通过locations属性指定多个资源。 您还可以定义多个配置器，每个配置器都有自己的占位符语法。 如果无法解析占位符，请使用`ignoreUnresolvablePlaceholders`故意禁止抛出异常。
+
+可以通过 properties 属性为每个 configurer 实例全局定义默认属性值，也可以使用默认值分隔符逐个属性定义默认值，默认值为`：` 并可通过`setValueSeparator（String）`自定义。
+
+示例具有默认值的XML属性：
+
+```xml
+<property name="url" value="jdbc:${dbname:defaultdb}"/>
+```
+
+### PropertyPlaceholderConfigurer
+
+PlaceholderConfigurerSupport 子类，用于根据本地属性和/或系统属性和环境变量解析`$ {...}`占位符。
+从Spring 3.1开始，PropertySourcesPlaceholderConfigurer 应优先用于此实现; 通过利用Spring 3.1中提供的 Environment 和 PropertySource 机制，它更加灵活。
+
+PropertyPlaceholderConfigurer 仍然适合在以下情况下使用：
+
+- spring-context模块不可用（即，一个使用Spring的BeanFactory API而不是ApplicationContext）。
+- 现有配置使用“systemPropertiesMode” 和/或 “systemPropertiesModeName”属性。 鼓励用户不再使用这些设置，而是通过容器的环境配置属性源搜索顺序; 但是，通过继续使用PropertyPlaceholderConfigurer 可以保持功能的精确保留。
+
+### PreferencesPlaceholderConfigurer
+
+PreferencesPlaceholderConfigurer 我们可以通过该类对配置文件中的占位符进行解析。
+
+PropertyPlaceholderConfigurer 的子类，支持JDK 1.4的 Preferences API（java.util.prefs）。
+尝试首先将占位符解析为用户首选项中的键，然后是在系统首选项中，然后是在此配置程序的属性中。 因此，如果没有定义相应的首选项，则行为类似于 PropertyPlaceholderConfigurer。
+
+支持系统和用户首选项树的自定义路径。 还支持占位符中指定的自定义路径（`myPath / myPlaceholderKey`）。 如果未指定，则使用相应的根节点。
+
+## 小结
+
+工厂后处理器应该是在 bean 创建之前执行的，需要注意 xml 文件中出现顺序。Spring 提供了几个默认的实现，用于处理过期类，属性编辑器，范围，通过配置文件（可以使用占位符）绑定属性，和 bean 属性。
+
+## bean 后处理器
+
+### BeanPostProcessor
+
+工厂钩子，允许自定义修改新的bean实例，例如检查标记接口或用代理包装它们。
+ApplicationContexts 可以在其bean定义中自动检测 BeanPostProcessor bean，并将它们应用于随后创建的任何 bean。 普通bean 工厂允许对后处理器进行编程注册，适用于通过该工厂创建的所有bean。
+
+通常，通过标记接口等填充bean的后处理器将实现postProcessBeforeInitialization（java.lang.Object，java.lang.String），而使用代理包装bean的后处理器通常会实现 postProcessAfterInitialization（java.lang.Object） ，java.lang.String）。
+
+它定义了两个方法：
+
+postProcessBeforeInitialization：在任何bean初始化回调之前将此BeanPostProcessor应用于给定的新bean实例（如 InitializingBean 的 afterPropertiesSet 或自定义 init 方法）。 bean已经填充了属性值。 返回的bean实例可能是原始实例的包装器。
+
+postProcessAfterInitialization：在任何bean初始化回调（如 InitializingBean 的 afterPropertiesSet或自定义 init 方法）之后，将此 BeanPostProcessor 应用于给定的新bean实例。 bean已经填充了属性值。 返回的bean实例可能是原始实例的包装器。
+对于FactoryBean，将为FactoryBean实例和FactoryBean创建的对象（从Spring 2.0开始）调用此回调。 后处理器可以通过相应的 Bean instanceof FactoryBean 检查来决定是应用于FactoryBean还是应用于创建的对象。
+
+与所有其他 BeanPostProcessor 回调相比，在`InstantiationAwareBeanPostProcessor.postProcessBeforeInstantiation（java.lang.Class <？>，java.lang.String）`方法触发的短路之后，也将调用此回调。
+
+### InstantiationAwareBeanPostProcessor
+
+BeanPostProcessor 的子接口，用于添加实例化前回调，实例化后但在显式属性设置或自动装配发生之前的回调。
+通常用于抑制特定目标bean的默认实例化，例如创建具有特殊 TargetSource 的代理（池化目标，延迟初始化目标等），或实现其他注入策略（如字段注入）。
+
+注意：此接口是一个专用接口，主要供框架内部使用。 建议尽可能实现普通的BeanPostProcessor接口，或者从`InstantiationAwareBeanPostProcessorAdapter`派生，以防止对此接口的扩展。
+
+它添加了一个 `postProcessPropertyValues`方法在工厂将它们应用于给定bean之前对给定属性值进行后处理。
+
+### DestructionAwareBeanPostProcessor
+
+BeanPostProcessor的子接口，它添加了一个bean 销毁前的回调。
+典型的用法是调用特定bean类型的自定义销毁回调，匹配相应的初始化回调。
+
+子类需要实现`requiresDestruction` 确定是否有相应类型的 bean 需要该后处理器处理。然后在`postProcessBeforeDestruction` 执行其他的销毁逻辑。
+
+### SmartInstantiationAwareBeanPostProcessor
+
+扩展`InstantiationAwareBeanPostProcessor`接口，添加一个回调以预测已处理bean的最终类型。
+
+注意：此接口是一个专用接口，主要供框架内部使用。 通常，应用程序提供的后处理器应该只实现普通的BeanPostProcessor接口，或者从InstantiationAwareBeanPostProcessorAdapter类派生。 即使在点发行版中，也可能会向此接口添加新方法。
+
+### InstantiationAwareBeanPostProcessorAdapter
+
+将`SmartInstantiationAwareBeanPostProcessor`上的所有方法实现为no-ops的适配器，它不会更改容器实例化的每个bean的正常处理。 子类可以仅覆盖它们实际感兴趣的那些方法。
+请注意，仅当您确实需要InstantiationAwareBeanPostProcessor功能时，才建议使用此基类。 如果您只需要简单的BeanPostProcessor功能，则更喜欢该（更简单）接口的直接实现。
+
+## 小结
+
+bean 后处理器是在bean 实例化之后，对bean 进行处理的接口。可以通过它在 bean 声明周期中进行初始化之前，销毁之前执行我们需要的逻辑。
+
+![](G:\KnowledgeBase\picture\Spring\bean_factory.png)
+
+### SingletonBeanRegistry
+
+用于注册单例bean 的注册器。
+
+为共享 bean 实例定义注册表的接口。 可以通过BeanFactory实现来实现，以便以统一的方式公开其单例管理工具。
+ConfigurableBeanFactory接口扩展了此接口。
+
+```java
+void registerSingleton(java.lang.String beanName,
+                       java.lang.Object singletonObject)
+```
+
+在给定的bean名称下，在bean注册表中将给定的现有对象注册为singleton。
+应该完全初始化给定的实例 ; 注册表不会执行任何初始化回调（特别是，它不会调用InitializingBean的afterPropertiesSet方法）。 给定的实例也不会收到任何销毁回调（如DisposableBean的destroy方法）。
+
+在完整的BeanFactory中运行时： 如果bean应该接收初始化和/或销毁回调，则注册bean definition 而不是现有实例。
+
+通常在注册表配置期间调用，但也可用于单例的运行时注册。 因此，注册表实现应该同步单例访问; 如果它支持 BeanFactory 对单例的懒惰初始化，它将无论如何都必须这样做。
+
+```java
+java.lang.Object getSingleton(java.lang.String beanName)
+```
+
+返回在给定名称下注册的（原始）单例对象。
+只检查已经实例化的单例; 不返回尚未实例化的单例 bean 定义的Object。
+
+此方法的主要目的是访问手动注册的单例（请参阅registerSingleton（java.lang.String，java.lang.Object））。 也可以用于以原始方式访问已经创建的bean定义定义的单例。
+
+注意：此查找方法不知道FactoryBean前缀或别名。 在获取单例实例之前，需要首先解析规范bean名称。
+
+### ConfigurableBeanFactory
+
+该接口提供了 BeanFactory 的各种组件的设置方法。
+
+配置接口由大多数bean factories 实现。 除了 BeanFactory 接口中的bean factory client 方法之外，还提供配置Bean factoriy 的工具。
+这个 bean工厂接口并不适用于普通的应用程序代码：坚持使用BeanFactory或ListableBeanFactory来满足典型需求。 这个扩展接口只是为了允许框架内部的即插即用和对bean工厂配置方法的特殊访问。
+
+### AutowireCapableBeanFactory
+
+BeanFactory 接口的扩展由能够自动装配的 bean facrory实现，前提是它们希望为现有bean 实例公开此功能。
+BeanFactory 的这个子接口并不适用于普通的应用程序代码：对于典型的用例，坚持使用BeanFactory或ListableBeanFactory。
+
+其他框架的集成代码可以利用此接口来连接和填充 Spring 无法控制其生命周期的现有Bean实例。例如，这对WebWork Actions和Tapestry Page对象特别有用。
+
+请注意，ApplicationContext 外观并未实现此接口，因为应用程序代码几乎不使用它。也就是说，它也可以从应用程序上下文中获得，可以通过ApplicationContext的`ApplicationContext.getAutowireCapableBeanFactory（）`方法访问。
+
+您还可以实现 BeanFactoryAware 接口，该接口即使在 ApplicationContext 中运行时也会公开内部BeanFactory，以访问AutowireCapableBeanFactory：只需将传入的BeanFactory强制转换为AutowireCapableBeanFactory。
+
+### ConfigurableListableBeanFactory
+
+配置接口由大多数可列出的bean Factory实现。 除了 ConfigurableBeanFactory之外，它还提供了分析和修改bean定义以及预先实例化单例的工具。
+BeanFactory 的这个子接口并不适用于普通的应用程序代码：对于典型的用例，请坚持使用BeanFactory或ListableBeanFactory。 这个接口只是为了允许框架内部的即插即用，即使需要访问bean工厂配置方法。
+
+![](G:\KnowledgeBase\picture\Spring\beans_factoryBean.png)
+
+### AbstractFactoryBean
+
+```java
+public abstract class AbstractFactoryBean<T>
+      implements FactoryBean<T>, BeanClassLoaderAware, BeanFactoryAware, InitializingBean, DisposableBean {
+```
+
+FactoryBean 实现的简单模板超类，它根据标志创建单例或原型对象。
+如果“singleton”标志为true（默认值），则此类将在初始化时创建它只创建一次的对象，然后在对getObject（）方法的所有调用上返回所述单例实例。
+
+否则，每次调用getObject（）方法时，此类都将创建一个新实例。 子类负责实现抽象的createInstance（）模板方法，以实际创建要公开的对象。
+
+该类的子类实现了创建集合的 FactoryBean 。
+
+可以创建 MapFactoryBean、	SetFactoryBean、ListFactoryBean
+
+例子：
+
+只需要继承 ListFactoryBean。
+
+```java
+public class MyListFactoryBean extends ListFactoryBean {
+
+}
+```
+
+在 xml 中声明 targetListClass 和 sourceList 即可。
+
+```xml
+<bean class="spring.MyListFactoryBean" id="listFactoryBean" >
+    <property name="targetListClass" value="java.util.LinkedList"></property>
+    <property name="sourceList" >
+        <list value-type="java.lang.String">
+            <value type="java.lang.String" >天津</value>
+        </list>
+    </property>
+    
+</bean>
+```
+
+
+
+
+
+### ObjectFactoryCreatingFactoryBean
+
+FactoryBean实现，它返回一个ObjectFactory值，该ObjectFactory又返回一个源自BeanFactory的bean。
+因此，这可以用于避免客户端对象直接调用BeanFactory.getBean（String）来从BeanFactory获取（通常是原型）bean，这将违反控制原理的反转。 相反，通过使用此类，客户端对象可以作为一个属性提供给ObjectFactory实例，该属性直接只返回一个目标bean（同样，它通常是一个原型bean）。
+
+基于XML的BeanFactory中的示例配置可能如下所示：
+
+```xml
+<beans>
+   <!-- Prototype bean since we have state -->
+   <bean id="myService" class="a.b.c.MyService" scope="prototype"/>
+
+   <bean id="myServiceFactory"
+       class="org.springframework.beans.factory.config.ObjectFactoryCreatingFactoryBean">
+     <property name="targetBeanName"><idref local="myService"/></property>
+   </bean>
+
+   <bean id="clientBean" class="a.b.c.MyClientBean">
+     <property name="myServiceFactory" ref="myServiceFactory"/>
+   </bean>
+
+</beans>
+```
+
+随之而来的MyClientBean类实现可能如下所示：
+
+```java
+package a.b.c;
+
+ import org.springframework.beans.factory.ObjectFactory;
+
+ public class MyClientBean {
+
+   private ObjectFactory<MyService> myServiceFactory;
+
+   public void setMyServiceFactory(ObjectFactory<MyService> myServiceFactory) {
+     this.myServiceFactory = myServiceFactory;
+   }
+
+   public void someBusinessMethod() {
+     // get a 'fresh', brand new MyService instance
+     MyService service = this.myServiceFactory.getObject();
+     // use the service object to effect the business logic...
+   }
+ }
+```
+
+对象创建模式的这种应用的另一种方法是使用 ServiceLocatorFactoryBean 来源（原型）bean。 ServiceLocatorFactoryBean方法的优点是，不需要依赖任何特定于Spring的接口（如ObjectFactory），但缺点是需要生成运行时类。 请查阅ServiceLocatorFactoryBean JavaDoc以获得更全面的讨论
+
+### ProviderCreatingFactoryBean
+
+FactoryBean 实现，返回一个值，该值是JSR-330 Provider，后者又返回一个源自BeanFactory的bean。
+这基本上是Spring的旧的ObjectFactoryCreatingFactoryBean的JSR-330兼容变体。 它可以用于传统的外部依赖注入配置，该配置以javax.inject.Provider类型的属性或构造函数参数为目标，作为JSR-330的 @Inject 注释驱动方法的替代。
+
+## 其他
+
+## BeanDefinition
+
+BeanDefinition描述了一个bean实例，它具有属性值，构造函数参数值以及具体实现提供的更多信息。
+这只是一个最小的接口：主要目的是允许 BeanFactoryPostProcessor（如PropertyPlaceholderConfigurer）内省和修改属性值和其他bean元数据。
+
+### BeanDefinitionVisitor
+
+它代表了spring 控制的每个bean 的定义。继承 AttributeAccessor, BeanMetadataElement
+
+遍历BeanDefinition对象的访问者类，特别是包含在其中的属性值和构造函数参数值，解析bean元数据值。
+由PropertyPlaceholderConfigurer用于解析BeanDefinition中包含的所有String值，解析找到的任何占位符。
+
+### BeanDefinitionHolder
+
+拥有名称和别名的BeanDefinition的持有者。 可以注册为内部bean的占位符。
+也可以用于内部bean定义的编程注册。 如果您不关心BeanNameAware等，注册RootBeanDefinition或ChildBeanDefinition就足够了。
