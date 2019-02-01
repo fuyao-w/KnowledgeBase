@@ -22,3 +22,4 @@ ApplicationContext提供：
 - EnvironmentCapable：表明所拥有的和公开 Environment 引用的组件的接口。 所有Spring应用程序上下文都是EnvironmentCapable，该接口主要用于在接受BeanFactory实例的框架方法中执行 instanceof 检查，这些实例可能实际上也可能不是ApplicationContext实例，以便在环境可用时与环境进行交互。
 - ListableBeanFactory：BeanFactory 接口的扩展，需要被可以枚举出所有 bean 的 bean 工厂来实现，而不是按照客户端要求逐个按名称查找 bean。
 - HierarchicalBeanFactory：由bean工厂实现的子接口，可以是层次结构的一部分。
+

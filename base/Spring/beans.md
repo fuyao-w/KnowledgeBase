@@ -108,6 +108,18 @@ FactoryBean 接口的扩展。 实现可以指示它们是否总是返回独立�
 
 注意：此接口是一个专用接口，主要供框架内和协作框架内部使用。 通常，应用程序提供的FactoryBeans应该只实现普通的FactoryBean接口。 即使在点发行版中，也可以向此扩展接口添加新方法。
 
+### ObjectFactory
+
+定义一个可以在调用时返回Object实例（可能是共享或独立）的工厂。
+
+此接口通常用于封装通用工厂，该工厂在每次调用时返回某个目标对象的新实例（原型）。
+
+此接口类似于FactoryBean，但后者的实现通常意味着在BeanFactory中定义为SPI实例，而此类的实现通常意味着作为API提供给其他bean（通过注入）。 因此，getObject（）方法具有不同的异常处理行为。
+
+### ObjectProvider
+
+ObjectFactory的一种变体，专门为注入点设计，允许程序化选项和宽松的非唯一处理。
+
 ### ListableBeanFactory
 
 BeanFactory 接口的扩展，可以枚举所有bean实例，而不是按客户端的请求逐个尝试按名称查找 bean。 预加载所有bean定义（例如基于XML的工厂）的BeanFactory实现可以实现此接口。
