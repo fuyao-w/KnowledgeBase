@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Diagram>
+  <ID>JAVA</ID>
+  <OriginalElement>org.springframework.web.multipart</OriginalElement>
+  <nodes>
+    <node x="47.0" y="235.0">org.springframework.web.multipart.MultipartException</node>
+    <node x="269.625" y="160.0">org.springframework.web.multipart.support</node>
+    <node x="311.0" y="80.0">org.springframework.web.multipart.MultipartHttpServletRequest</node>
+    <node x="343.0" y="0.0">org.springframework.web.multipart.MultipartRequest</node>
+    <node x="47.87499999999997" y="160.0">org.springframework.web.multipart.commons</node>
+    <node x="0.0" y="80.0">org.springframework.web.multipart.MultipartFile</node>
+    <node x="0.0" y="315.0">org.springframework.web.multipart.MaxUploadSizeExceededException</node>
+    <node x="140.0" y="80.0">org.springframework.web.multipart.MultipartResolver</node>
+  </nodes>
+  <notes />
+  <edges>
+    <edge source="org.springframework.web.multipart.MaxUploadSizeExceededException" target="org.springframework.web.multipart.MultipartException">
+      <point x="0.0" y="-15.0" />
+      <point x="0.0" y="15.0" />
+    </edge>
+    <edge source="org.springframework.web.multipart.support" target="org.springframework.web.multipart.MultipartHttpServletRequest">
+      <point x="32.75" y="-15.0" />
+      <point x="367.875" y="135.0" />
+      <point x="417.0" y="135.0" />
+      <point x="0.0" y="15.0" />
+    </edge>
+    <edge source="org.springframework.web.multipart.commons" target="org.springframework.web.multipart.MultipartResolver">
+      <point x="35.5" y="-15.0" />
+      <point x="154.37499999999997" y="135.0" />
+      <point x="177.75" y="135.0" />
+      <point x="-37.75" y="15.0" />
+    </edge>
+    <edge source="org.springframework.web.multipart.MultipartHttpServletRequest" target="org.springframework.web.multipart.MultipartRequest">
+      <point x="0.0" y="-15.0" />
+      <point x="0.0" y="15.0" />
+    </edge>
+    <edge source="org.springframework.web.multipart.commons" target="org.springframework.web.multipart.MultipartFile">
+      <point x="-35.5" y="-15.0" />
+      <point x="83.37499999999997" y="135.0" />
+      <point x="60.0" y="135.0" />
+      <point x="0.0" y="15.0" />
+    </edge>
+    <edge source="org.springframework.web.multipart.support" target="org.springframework.web.multipart.MultipartResolver">
+      <point x="-32.75" y="-15.0" />
+      <point x="302.375" y="135.0" />
+      <point x="253.25" y="135.0" />
+      <point x="37.75" y="15.0" />
+    </edge>
+  </edges>
+  <settings layout="Hierarchic Group" zoom="1.3000000000000003" x="342.5" y="175.03846153846155" />
+  <SelectedNodes>
+    <node>org.springframework.web.multipart.MaxUploadSizeExceededException</node>
+  </SelectedNodes>
+  <Categories />
+  <SCOPE>All</SCOPE>
+  <VISIBILITY>private</VISIBILITY>
+</Diagram>
+

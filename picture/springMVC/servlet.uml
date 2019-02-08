@@ -1,0 +1,212 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Diagram>
+  <ID>JAVA</ID>
+  <OriginalElement>org.springframework.web.servlet</OriginalElement>
+  <nodes>
+    <node x="166.16875000000005" y="170.0">org.springframework.web.servlet.support</node>
+    <node x="300.75" y="250.0">org.springframework.web.servlet.resource</node>
+    <node x="723.0" y="405.0">org.springframework.web.servlet.ResourceServlet</node>
+    <node x="672.375" y="170.0">org.springframework.web.servlet.ThemeResolver</node>
+    <node x="989.4625000000001" y="80.0">org.springframework.web.servlet.LocaleResolver</node>
+    <node x="249.0" y="560.0">org.springframework.web.servlet.HandlerExecutionChain</node>
+    <node x="0.0" y="560.0">org.springframework.web.servlet.NoHandlerFoundException</node>
+    <node x="0.0" y="405.0">org.springframework.web.servlet.SmartView</node>
+    <node x="130.0" y="405.0">org.springframework.web.servlet.RequestToViewNameTranslator</node>
+    <node x="552.5" y="485.0">org.springframework.web.servlet.DispatcherServlet</node>
+    <node x="259.1333333333334" y="0.0">org.springframework.web.servlet.HandlerInterceptor</node>
+    <node x="0.0" y="635.0">org.springframework.web.servlet.FlashMap</node>
+    <node x="401.875" y="170.0">org.springframework.web.servlet.handler</node>
+    <node x="381.0" y="405.0">org.springframework.web.servlet.ViewResolver</node>
+    <node x="909.0" y="325.0">org.springframework.web.servlet.ModelAndViewDefiningException</node>
+    <node x="127.5" y="485.0">org.springframework.web.servlet.view</node>
+    <node x="639.75" y="325.0">org.springframework.web.servlet.HttpServletBean</node>
+    <node x="475.0" y="560.0">org.springframework.web.servlet.ViewRendererServlet</node>
+    <node x="869.0" y="560.0">org.springframework.web.servlet.config</node>
+    <node x="63.88333333333338" y="250.0">org.springframework.web.servlet.mvc</node>
+    <node x="1035.0" y="560.0">org.springframework.web.servlet.tags</node>
+    <node x="603.875" y="250.0">org.springframework.web.servlet.theme</node>
+    <node x="551.0" y="405.0">org.springframework.web.servlet.FrameworkServlet</node>
+    <node x="973.4666666666667" y="250.0">org.springframework.web.servlet.i18n</node>
+    <node x="688.0" y="560.0">org.springframework.web.servlet.ModelAndView</node>
+    <node x="49.375" y="325.0">org.springframework.web.servlet.View</node>
+    <node x="1017.4625000000001" y="170.0">org.springframework.web.servlet.LocaleContextResolver</node>
+    <node x="557.4625000000001" y="80.0">org.springframework.web.servlet.HandlerExceptionResolver</node>
+    <node x="390.46250000000003" y="80.0">org.springframework.web.servlet.HandlerMapping</node>
+    <node x="187.5" y="80.0">org.springframework.web.servlet.HandlerAdapter</node>
+    <node x="777.4625000000001" y="80.0">org.springframework.web.servlet.AsyncHandlerInterceptor</node>
+    <node x="10.5" y="80.0">org.springframework.web.servlet.FlashMapManager</node>
+  </nodes>
+  <notes />
+  <edges>
+    <edge source="org.springframework.web.servlet.FrameworkServlet" target="org.springframework.web.servlet.HttpServletBean">
+      <point x="0.0" y="-15.0" />
+      <point x="627.0" y="380.0" />
+      <point x="675.0" y="380.0" />
+      <point x="-35.25" y="15.0" />
+    </edge>
+    <edge source="org.springframework.web.servlet.theme" target="org.springframework.web.servlet.handler">
+      <point x="-30.25" y="-15.0" />
+      <point x="634.125" y="230.0" />
+      <point x="466.375" y="230.0" />
+      <point x="0.0" y="15.0" />
+    </edge>
+    <edge source="org.springframework.web.servlet.handler" target="org.springframework.web.servlet.AsyncHandlerInterceptor">
+      <point x="53.75" y="-15.0" />
+      <point x="520.125" y="150.0" />
+      <point x="873.4625000000001" y="150.0" />
+      <point x="0.0" y="15.0" />
+    </edge>
+    <edge source="org.springframework.web.servlet.i18n" target="org.springframework.web.servlet.LocaleResolver">
+      <point x="0.0" y="-15.0" />
+      <point x="1027.9666666666667" y="230.0" />
+      <point x="1006.9625000000001" y="230.0" />
+      <point x="1006.9625000000001" y="150.0" />
+      <point x="1023.2125000000001" y="150.0" />
+      <point x="-33.75" y="15.0" />
+    </edge>
+    <edge source="org.springframework.web.servlet.handler" target="org.springframework.web.servlet.HandlerAdapter">
+      <point x="-53.75" y="-15.0" />
+      <point x="412.625" y="150.0" />
+      <point x="293.25" y="150.0" />
+      <point x="35.25" y="15.0" />
+    </edge>
+    <edge source="org.springframework.web.servlet.view" target="org.springframework.web.servlet.SmartView">
+      <point x="-41.25" y="-15.0" />
+      <point x="141.25" y="465.0" />
+      <point x="54.5" y="465.0" />
+      <point x="0.0" y="15.0" />
+    </edge>
+    <edge source="org.springframework.web.servlet.support" target="org.springframework.web.servlet.FlashMapManager">
+      <point x="0.0" y="-15.0" />
+      <point x="231.66875000000005" y="140.0" />
+      <point x="89.0" y="140.0" />
+      <point x="0.0" y="15.0" />
+    </edge>
+    <edge source="org.springframework.web.servlet.handler" target="org.springframework.web.servlet.HandlerMapping">
+      <point x="10.75" y="-15.0" />
+      <point x="477.125" y="130.0" />
+      <point x="500.71250000000003" y="130.0" />
+      <point x="36.75" y="15.0" />
+    </edge>
+    <edge source="org.springframework.web.servlet.mvc" target="org.springframework.web.servlet.HandlerInterceptor">
+      <point x="-36.0" y="-15.0" />
+      <point x="81.88333333333338" y="230.0" />
+      <point x="0.0" y="230.0" />
+      <point x="0.0" y="55.0" />
+      <point x="285.6333333333334" y="55.0" />
+      <point x="-53.0" y="15.0" />
+    </edge>
+    <edge source="org.springframework.web.servlet.ResourceServlet" target="org.springframework.web.servlet.HttpServletBean">
+      <point x="0.0" y="-15.0" />
+      <point x="793.5" y="380.0" />
+      <point x="745.5" y="380.0" />
+      <point x="35.25" y="15.0" />
+    </edge>
+    <edge source="org.springframework.web.servlet.resource" target="org.springframework.web.servlet.handler">
+      <point x="34.0" y="-15.0" />
+      <point x="402.75" y="230.0" />
+      <point x="423.375" y="230.0" />
+      <point x="-43.0" y="15.0" />
+    </edge>
+    <edge source="org.springframework.web.servlet.theme" target="org.springframework.web.servlet.ThemeResolver">
+      <point x="30.25" y="-15.0" />
+      <point x="694.625" y="230.0" />
+      <point x="740.875" y="230.0" />
+      <point x="0.0" y="15.0" />
+    </edge>
+    <edge source="org.springframework.web.servlet.AsyncHandlerInterceptor" target="org.springframework.web.servlet.HandlerInterceptor">
+      <point x="0.0" y="-15.0" />
+      <point x="873.4625000000001" y="55.0" />
+      <point x="391.6333333333334" y="55.0" />
+      <point x="53.0" y="15.0" />
+    </edge>
+    <edge source="org.springframework.web.servlet.handler" target="org.springframework.web.servlet.HandlerExceptionResolver">
+      <point x="32.25" y="-15.0" />
+      <point x="498.625" y="140.0" />
+      <point x="657.4625000000001" y="140.0" />
+      <point x="0.0" y="15.0" />
+    </edge>
+    <edge source="org.springframework.web.servlet.i18n" target="org.springframework.web.servlet.handler">
+      <point x="-36.33333333333326" y="-15.0" />
+      <point x="991.6333333333334" y="220.0" />
+      <point x="509.375" y="220.0" />
+      <point x="43.0" y="15.0" />
+    </edge>
+    <edge source="org.springframework.web.servlet.LocaleContextResolver" target="org.springframework.web.servlet.LocaleResolver">
+      <point x="0.0" y="-15.0" />
+      <point x="1106.9625" y="150.0" />
+      <point x="1090.7125" y="150.0" />
+      <point x="33.75" y="15.0" />
+    </edge>
+    <edge source="org.springframework.web.servlet.handler" target="org.springframework.web.servlet.HandlerInterceptor">
+      <point x="-32.25" y="-15.0" />
+      <point x="434.125" y="140.0" />
+      <point x="339.0" y="140.0" />
+      <point x="0.0" y="15.0" />
+    </edge>
+    <edge source="org.springframework.web.servlet.i18n" target="org.springframework.web.servlet.LocaleContextResolver">
+      <point x="36.33333333333326" y="-15.0" />
+      <point x="1064.3" y="230.0" />
+      <point x="1106.9625" y="230.0" />
+      <point x="0.0" y="15.0" />
+    </edge>
+    <edge source="org.springframework.web.servlet.view" target="org.springframework.web.servlet.ViewResolver">
+      <point x="41.25" y="-15.0" />
+      <point x="223.75" y="465.0" />
+      <point x="443.5" y="465.0" />
+      <point x="0.0" y="15.0" />
+    </edge>
+    <edge source="org.springframework.web.servlet.DispatcherServlet" target="org.springframework.web.servlet.FrameworkServlet">
+      <point x="0.0" y="-15.0" />
+      <point x="0.0" y="15.0" />
+    </edge>
+    <edge source="org.springframework.web.servlet.SmartView" target="org.springframework.web.servlet.View">
+      <point x="0.0" y="-15.0" />
+      <point x="54.5" y="380.0" />
+      <point x="68.125" y="380.0" />
+      <point x="-18.75" y="15.0" />
+    </edge>
+    <edge source="org.springframework.web.servlet.view" target="org.springframework.web.servlet.View">
+      <point x="-13.75" y="-15.0" />
+      <point x="168.75" y="455.0" />
+      <point x="119.5" y="455.0" />
+      <point x="119.5" y="380.0" />
+      <point x="105.625" y="380.0" />
+      <point x="18.75" y="15.0" />
+    </edge>
+    <edge source="org.springframework.web.servlet.resource" target="org.springframework.web.servlet.support">
+      <point x="-34.0" y="-15.0" />
+      <point x="334.75" y="230.0" />
+      <point x="264.41875000000005" y="230.0" />
+      <point x="32.75" y="15.0" />
+    </edge>
+    <edge source="org.springframework.web.servlet.view" target="org.springframework.web.servlet.RequestToViewNameTranslator">
+      <point x="13.75" y="-15.0" />
+      <point x="196.25" y="455.0" />
+      <point x="245.5" y="455.0" />
+      <point x="0.0" y="15.0" />
+    </edge>
+    <edge source="org.springframework.web.servlet.mvc" target="org.springframework.web.servlet.support">
+      <point x="36.0" y="-15.0" />
+      <point x="153.88333333333338" y="230.0" />
+      <point x="198.91875000000005" y="230.0" />
+      <point x="-32.75" y="15.0" />
+    </edge>
+    <edge source="org.springframework.web.servlet.mvc" target="org.springframework.web.servlet.HandlerAdapter">
+      <point x="0.0" y="-15.0" />
+      <point x="117.88333333333338" y="230.0" />
+      <point x="105.38333333333338" y="230.0" />
+      <point x="105.38333333333338" y="150.0" />
+      <point x="222.75" y="150.0" />
+      <point x="-35.25" y="15.0" />
+    </edge>
+  </edges>
+  <settings layout="Hierarchic Group" zoom="1.2000000000000002" x="553.5833333333333" y="260.49999999999994" />
+  <SelectedNodes>
+    <node>org.springframework.web.servlet.DispatcherServlet</node>
+  </SelectedNodes>
+  <Categories />
+  <SCOPE>All</SCOPE>
+  <VISIBILITY>private</VISIBILITY>
+</Diagram>
+

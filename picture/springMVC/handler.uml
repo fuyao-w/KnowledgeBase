@@ -1,0 +1,94 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Diagram>
+  <ID>JAVA</ID>
+  <OriginalElement>org.springframework.web.servlet.handler</OriginalElement>
+  <nodes>
+    <node x="0.0" y="700.0">org.springframework.web.servlet.handler.SimpleServletHandlerAdapter</node>
+    <node x="633.0" y="625.0">org.springframework.web.servlet.handler.DispatcherServletWebRequest</node>
+    <node x="314.0" y="395.0">org.springframework.web.servlet.handler.SimpleMappingExceptionResolver</node>
+    <node x="211.0" y="775.0">org.springframework.web.servlet.handler.MappedInterceptor</node>
+    <node x="528.0" y="700.0">org.springframework.web.servlet.handler.SimpleServletPostProcessor</node>
+    <node x="104.0" y="0.0">org.springframework.web.servlet.handler.MatchableHandlerMapping</node>
+    <node x="155.0" y="80.0">org.springframework.web.servlet.handler.AbstractUrlHandlerMapping</node>
+    <node x="361.25" y="0.0">org.springframework.web.servlet.handler.AbstractHandlerMapping</node>
+    <node x="0.0" y="625.0">org.springframework.web.servlet.handler.WebRequestHandlerInterceptorAdapter</node>
+    <node x="171.75" y="470.0">org.springframework.web.servlet.handler.HandlerInterceptorAdapter</node>
+    <node x="580.0" y="470.0">org.springframework.web.servlet.handler.HandlerMethodMappingNamingStrategy</node>
+    <node x="292.0" y="550.0">org.springframework.web.servlet.handler.UserRoleAuthorizationInterceptor</node>
+    <node x="19.5" y="240.0">org.springframework.web.servlet.handler.BeanNameUrlHandlerMapping</node>
+    <node x="325.0" y="625.0">org.springframework.web.servlet.handler.HandlerExceptionResolverComposite</node>
+    <node x="0.0" y="395.0">org.springframework.web.servlet.handler.AbstractHandlerMethodExceptionResolver</node>
+    <node x="264.0" y="700.0">org.springframework.web.servlet.handler.HandlerMappingIntrospector</node>
+    <node x="0.0" y="160.0">org.springframework.web.servlet.handler.AbstractDetectingUrlHandlerMapping</node>
+    <node x="387.0" y="80.0">org.springframework.web.servlet.handler.AbstractHandlerMethodMapping</node>
+    <node x="287.0" y="160.0">org.springframework.web.servlet.handler.SimpleUrlHandlerMapping</node>
+    <node x="0.0" y="550.0">org.springframework.web.servlet.handler.ConversionServiceExposingInterceptor</node>
+    <node x="0.0" y="775.0">org.springframework.web.servlet.handler.RequestMatchResult</node>
+    <node x="168.0" y="315.0">org.springframework.web.servlet.handler.AbstractHandlerExceptionResolver</node>
+  </nodes>
+  <notes />
+  <edges>
+    <edge source="org.springframework.web.servlet.handler.SimpleUrlHandlerMapping" target="org.springframework.web.servlet.handler.AbstractUrlHandlerMapping">
+      <point x="0.0" y="-15.0" />
+      <point x="388.5" y="135.0" />
+      <point x="314.0" y="135.0" />
+      <point x="53.0" y="15.0" />
+    </edge>
+    <edge source="org.springframework.web.servlet.handler.AbstractUrlHandlerMapping" target="org.springframework.web.servlet.handler.AbstractHandlerMapping">
+      <point x="53.0" y="-15.0" />
+      <point x="314.0" y="55.0" />
+      <point x="410.0" y="55.0" />
+      <point x="-48.75" y="15.0" />
+    </edge>
+    <edge source="org.springframework.web.servlet.handler.SimpleMappingExceptionResolver" target="org.springframework.web.servlet.handler.AbstractHandlerExceptionResolver">
+      <point x="0.0" y="-15.0" />
+      <point x="437.0" y="370.0" />
+      <point x="354.0" y="370.0" />
+      <point x="62.0" y="15.0" />
+    </edge>
+    <edge source="org.springframework.web.servlet.handler.UserRoleAuthorizationInterceptor" target="org.springframework.web.servlet.handler.HandlerInterceptorAdapter">
+      <point x="0.0" y="-15.0" />
+      <point x="413.5" y="525.0" />
+      <point x="326.25" y="525.0" />
+      <point x="51.5" y="15.0" />
+    </edge>
+    <edge source="org.springframework.web.servlet.handler.ConversionServiceExposingInterceptor" target="org.springframework.web.servlet.handler.HandlerInterceptorAdapter">
+      <point x="0.0" y="-15.0" />
+      <point x="136.0" y="525.0" />
+      <point x="223.25" y="525.0" />
+      <point x="-51.5" y="15.0" />
+    </edge>
+    <edge source="org.springframework.web.servlet.handler.AbstractHandlerMethodMapping" target="org.springframework.web.servlet.handler.AbstractHandlerMapping">
+      <point x="0.0" y="-15.0" />
+      <point x="48.75" y="15.0" />
+    </edge>
+    <edge source="org.springframework.web.servlet.handler.AbstractDetectingUrlHandlerMapping" target="org.springframework.web.servlet.handler.AbstractUrlHandlerMapping">
+      <point x="0.0" y="-15.0" />
+      <point x="133.5" y="135.0" />
+      <point x="208.0" y="135.0" />
+      <point x="-53.0" y="15.0" />
+    </edge>
+    <edge source="org.springframework.web.servlet.handler.BeanNameUrlHandlerMapping" target="org.springframework.web.servlet.handler.AbstractDetectingUrlHandlerMapping">
+      <point x="0.0" y="-15.0" />
+      <point x="0.0" y="15.0" />
+    </edge>
+    <edge source="org.springframework.web.servlet.handler.AbstractHandlerMethodExceptionResolver" target="org.springframework.web.servlet.handler.AbstractHandlerExceptionResolver">
+      <point x="0.0" y="-15.0" />
+      <point x="147.0" y="370.0" />
+      <point x="230.0" y="370.0" />
+      <point x="-62.0" y="15.0" />
+    </edge>
+    <edge source="org.springframework.web.servlet.handler.AbstractUrlHandlerMapping" target="org.springframework.web.servlet.handler.MatchableHandlerMapping">
+      <point x="-53.0" y="-15.0" />
+      <point x="0.0" y="15.0" />
+    </edge>
+  </edges>
+  <settings layout="Hierarchic Group" zoom="1.1" x="460.5454545454545" y="363.45454545454544" />
+  <SelectedNodes>
+    <node>org.springframework.web.servlet.handler.SimpleServletHandlerAdapter</node>
+  </SelectedNodes>
+  <Categories />
+  <SCOPE>All</SCOPE>
+  <VISIBILITY>private</VISIBILITY>
+</Diagram>
+

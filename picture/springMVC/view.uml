@@ -1,0 +1,236 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Diagram>
+  <ID>JAVA</ID>
+  <OriginalElement>org.springframework.web.servlet.view</OriginalElement>
+  <nodes>
+    <node x="0.0" y="425.0">org.springframework.web.servlet.view.DefaultRequestToViewNameTranslator</node>
+    <node x="152.74381868131888" y="0.0">org.springframework.web.servlet.view.AbstractView</node>
+    <node x="1917.2543956043958" y="250.0">org.springframework.web.servlet.view.InternalResourceViewResolver</node>
+    <node x="1256.0" y="350.0">org.springframework.web.servlet.view.groovy</node>
+    <node x="1712.340460927961" y="350.0">org.springframework.web.servlet.view.velocity</node>
+    <node x="532.5" y="250.0">org.springframework.web.servlet.view.InternalResourceView</node>
+    <node x="572.5" y="350.0">org.springframework.web.servlet.view.JstlView</node>
+    <node x="389.5" y="250.0">org.springframework.web.servlet.view.RedirectView</node>
+    <node x="132.0" y="90.0">org.springframework.web.servlet.view.json</node>
+    <node x="1400.0" y="90.0">org.springframework.web.servlet.view.UrlBasedViewResolver</node>
+    <node x="317.0" y="425.0">org.springframework.web.servlet.view.ContentNegotiatingViewResolver</node>
+    <node x="1362.2543956043958" y="250.0">org.springframework.web.servlet.view.jasperreports</node>
+    <node x="763.8938186813189" y="350.0">org.springframework.web.servlet.view.freemarker</node>
+    <node x="226.5" y="250.0">org.springframework.web.servlet.view.document</node>
+    <node x="1598.0" y="90.0">org.springframework.web.servlet.view.ResourceBundleViewResolver</node>
+    <node x="835.0" y="425.0">org.springframework.web.servlet.view.ViewResolverComposite</node>
+    <node x="758.2543956043958" y="250.0">org.springframework.web.servlet.view.AbstractTemplateView</node>
+    <node x="1225.2543956043958" y="250.0">org.springframework.web.servlet.view.script</node>
+    <node x="601.0" y="425.0">org.springframework.web.servlet.view.BeanNameViewResolver</node>
+    <node x="0.0" y="90.0">org.springframework.web.servlet.view.feed</node>
+    <node x="1546.2543956043958" y="250.0">org.springframework.web.servlet.view.xslt</node>
+    <node x="1164.375" y="90.0">org.springframework.web.servlet.view.XmlViewResolver</node>
+    <node x="899.75" y="90.0">org.springframework.web.servlet.view.AbstractUrlBasedView</node>
+    <node x="1379.5" y="0.0">org.springframework.web.servlet.view.AbstractCachingViewResolver</node>
+    <node x="101.5" y="250.0">org.springframework.web.servlet.view.xml</node>
+    <node x="1670.2543956043958" y="250.0">org.springframework.web.servlet.view.AbstractTemplateViewResolver</node>
+    <node x="1090.2543956043958" y="250.0">org.springframework.web.servlet.view.tiles3</node>
+    <node x="955.2543956043958" y="250.0">org.springframework.web.servlet.view.tiles2</node>
+  </nodes>
+  <notes />
+  <edges>
+    <edge source="org.springframework.web.servlet.view.tiles2" target="org.springframework.web.servlet.view.AbstractUrlBasedView">
+      <point x="-28.75" y="-15.0" />
+      <point x="984.0043956043958" y="230.0" />
+      <point x="987.75" y="230.0" />
+      <point x="0.0" y="15.0" />
+    </edge>
+    <edge source="org.springframework.web.servlet.view.InternalResourceViewResolver" target="org.springframework.web.servlet.view.UrlBasedViewResolver">
+      <point x="0.0" y="-15.0" />
+      <point x="2028.7543956043958" y="140.0" />
+      <point x="1565.2857142857142" y="140.0" />
+      <point x="76.28571428571422" y="15.0" />
+    </edge>
+    <edge source="org.springframework.web.servlet.view.XmlViewResolver" target="org.springframework.web.servlet.view.AbstractCachingViewResolver">
+      <point x="0.0" y="-15.0" />
+      <point x="1237.875" y="70.0" />
+      <point x="1416.0" y="70.0" />
+      <point x="-73.0" y="15.0" />
+    </edge>
+    <edge source="org.springframework.web.servlet.view.xml" target="org.springframework.web.servlet.view.json">
+      <point x="26.25" y="-15.0" />
+      <point x="180.25" y="230.0" />
+      <point x="186.5" y="230.0" />
+      <point x="0.0" y="15.0" />
+    </edge>
+    <edge source="org.springframework.web.servlet.view.xslt" target="org.springframework.web.servlet.view.UrlBasedViewResolver">
+      <point x="26.0" y="-15.0" />
+      <point x="1624.2543956043958" y="160.0" />
+      <point x="1514.4285714285716" y="160.0" />
+      <point x="25.42857142857156" y="15.0" />
+    </edge>
+    <edge source="org.springframework.web.servlet.view.script" target="org.springframework.web.servlet.view.UrlBasedViewResolver">
+      <point x="29.25" y="-15.0" />
+      <point x="1313.0043956043958" y="230.0" />
+      <point x="1463.5714285714287" y="230.0" />
+      <point x="-25.42857142857133" y="15.0" />
+    </edge>
+    <edge source="org.springframework.web.servlet.view.groovy" target="org.springframework.web.servlet.view.AbstractTemplateViewResolver">
+      <point x="31.5" y="-15.0" />
+      <point x="1350.5" y="330.0" />
+      <point x="1783.7543956043958" y="330.0" />
+      <point x="0.0" y="15.0" />
+    </edge>
+    <edge source="org.springframework.web.servlet.view.AbstractTemplateViewResolver" target="org.springframework.web.servlet.view.UrlBasedViewResolver">
+      <point x="0.0" y="-15.0" />
+      <point x="1783.7543956043958" y="150.0" />
+      <point x="1539.857142857143" y="150.0" />
+      <point x="50.85714285714289" y="15.0" />
+    </edge>
+    <edge source="org.springframework.web.servlet.view.groovy" target="org.springframework.web.servlet.view.AbstractTemplateView">
+      <point x="-31.5" y="-15.0" />
+      <point x="1287.5" y="310.0" />
+      <point x="846.7543956043958" y="310.0" />
+      <point x="0.0" y="15.0" />
+    </edge>
+    <edge source="org.springframework.web.servlet.view.tiles2" target="org.springframework.web.servlet.view.UrlBasedViewResolver">
+      <point x="28.75" y="-15.0" />
+      <point x="1041.5043956043958" y="210.0" />
+      <point x="1412.7142857142858" y="210.0" />
+      <point x="-76.28571428571422" y="15.0" />
+    </edge>
+    <edge source="org.springframework.web.servlet.view.freemarker" target="org.springframework.web.servlet.view.AbstractTemplateViewResolver">
+      <point x="37.5" y="-15.0" />
+      <point x="876.3938186813189" y="320.0" />
+      <point x="1708.087728937729" y="320.0" />
+      <point x="-75.66666666666674" y="15.0" />
+    </edge>
+    <edge source="org.springframework.web.servlet.view.json" target="org.springframework.web.servlet.view.AbstractView">
+      <point x="0.0" y="-15.0" />
+      <point x="186.5" y="70.0" />
+      <point x="214.24381868131888" y="70.0" />
+      <point x="0.0" y="15.0" />
+    </edge>
+    <edge source="org.springframework.web.servlet.view.JstlView" target="org.springframework.web.servlet.view.InternalResourceView">
+      <point x="0.0" y="-15.0" />
+      <point x="0.0" y="15.0" />
+    </edge>
+    <edge source="org.springframework.web.servlet.view.jasperreports" target="org.springframework.web.servlet.view.UrlBasedViewResolver">
+      <point x="41.0" y="-15.0" />
+      <point x="1485.2543956043958" y="230.0" />
+      <point x="1489.0" y="230.0" />
+      <point x="0.0" y="15.0" />
+    </edge>
+    <edge source="org.springframework.web.servlet.view.UrlBasedViewResolver" target="org.springframework.web.servlet.view.AbstractCachingViewResolver">
+      <point x="0.0" y="-15.0" />
+      <point x="0.0" y="15.0" />
+    </edge>
+    <edge source="org.springframework.web.servlet.view.tiles3" target="org.springframework.web.servlet.view.AbstractUrlBasedView">
+      <point x="-28.75" y="-15.0" />
+      <point x="1119.0043956043958" y="200.0" />
+      <point x="1007.3055555555555" y="200.0" />
+      <point x="19.555555555555543" y="15.0" />
+    </edge>
+    <edge source="org.springframework.web.servlet.view.ResourceBundleViewResolver" target="org.springframework.web.servlet.view.AbstractCachingViewResolver">
+      <point x="0.0" y="-15.0" />
+      <point x="1707.5" y="70.0" />
+      <point x="1562.0" y="70.0" />
+      <point x="73.0" y="15.0" />
+    </edge>
+    <edge source="org.springframework.web.servlet.view.AbstractUrlBasedView" target="org.springframework.web.servlet.view.AbstractView">
+      <point x="0.0" y="-15.0" />
+      <point x="987.75" y="60.0" />
+      <point x="263.4438186813188" y="60.0" />
+      <point x="49.19999999999999" y="15.0" />
+    </edge>
+    <edge source="org.springframework.web.servlet.view.RedirectView" target="org.springframework.web.servlet.view.AbstractUrlBasedView">
+      <point x="0.0" y="-15.0" />
+      <point x="451.0" y="210.0" />
+      <point x="929.0833333333334" y="210.0" />
+      <point x="-58.66666666666663" y="15.0" />
+    </edge>
+    <edge source="org.springframework.web.servlet.view.feed" target="org.springframework.web.servlet.view.AbstractView">
+      <point x="0.0" y="-15.0" />
+      <point x="55.5" y="50.0" />
+      <point x="165.04381868131895" y="50.0" />
+      <point x="-49.19999999999999" y="15.0" />
+    </edge>
+    <edge source="org.springframework.web.servlet.view.xslt" target="org.springframework.web.servlet.view.AbstractUrlBasedView">
+      <point x="-26.0" y="-15.0" />
+      <point x="1572.2543956043958" y="170.0" />
+      <point x="1065.9722222222222" y="170.0" />
+      <point x="78.22222222222217" y="15.0" />
+    </edge>
+    <edge source="org.springframework.web.servlet.view.velocity" target="org.springframework.web.servlet.view.AbstractTemplateView">
+      <point x="-32.0" y="-15.0" />
+      <point x="1744.340460927961" y="300.0" />
+      <point x="905.7543956043958" y="300.0" />
+      <point x="59.0" y="15.0" />
+    </edge>
+    <edge source="org.springframework.web.servlet.view.script" target="org.springframework.web.servlet.view.AbstractUrlBasedView">
+      <point x="-29.25" y="-15.0" />
+      <point x="1254.5043956043958" y="190.0" />
+      <point x="1026.861111111111" y="190.0" />
+      <point x="39.111111111111086" y="15.0" />
+    </edge>
+    <edge source="org.springframework.web.servlet.view.InternalResourceView" target="org.springframework.web.servlet.view.AbstractUrlBasedView">
+      <point x="0.0" y="-15.0" />
+      <point x="619.0" y="220.0" />
+      <point x="948.6388888888889" y="220.0" />
+      <point x="-39.111111111111086" y="15.0" />
+    </edge>
+    <edge source="org.springframework.web.servlet.view.velocity" target="org.springframework.web.servlet.view.AbstractTemplateViewResolver">
+      <point x="32.0" y="-15.0" />
+      <point x="1808.340460927961" y="330.0" />
+      <point x="1859.4210622710625" y="330.0" />
+      <point x="75.66666666666674" y="15.0" />
+    </edge>
+    <edge source="org.springframework.web.servlet.view.xml" target="org.springframework.web.servlet.view.AbstractView">
+      <point x="-26.25" y="-15.0" />
+      <point x="127.75" y="230.0" />
+      <point x="121.5" y="230.0" />
+      <point x="121.5" y="60.0" />
+      <point x="189.64381868131886" y="60.0" />
+      <point x="-24.600000000000023" y="15.0" />
+    </edge>
+    <edge source="org.springframework.web.servlet.view.tiles3" target="org.springframework.web.servlet.view.UrlBasedViewResolver">
+      <point x="28.75" y="-15.0" />
+      <point x="1176.5043956043958" y="220.0" />
+      <point x="1438.142857142857" y="220.0" />
+      <point x="-50.85714285714289" y="15.0" />
+    </edge>
+    <edge source="org.springframework.web.servlet.view.AbstractTemplateView" target="org.springframework.web.servlet.view.AbstractUrlBasedView">
+      <point x="0.0" y="-15.0" />
+      <point x="846.7543956043958" y="230.0" />
+      <point x="968.1944444444445" y="230.0" />
+      <point x="-19.555555555555543" y="15.0" />
+    </edge>
+    <edge source="org.springframework.web.servlet.view.document" target="org.springframework.web.servlet.view.AbstractView">
+      <point x="-35.75" y="-15.0" />
+      <point x="262.25" y="70.0" />
+      <point x="238.8438186813189" y="70.0" />
+      <point x="24.600000000000023" y="15.0" />
+    </edge>
+    <edge source="org.springframework.web.servlet.view.document" target="org.springframework.web.servlet.view.AbstractUrlBasedView">
+      <point x="35.75" y="-15.0" />
+      <point x="333.75" y="200.0" />
+      <point x="909.5277777777778" y="200.0" />
+      <point x="-78.22222222222217" y="15.0" />
+    </edge>
+    <edge source="org.springframework.web.servlet.view.jasperreports" target="org.springframework.web.servlet.view.AbstractUrlBasedView">
+      <point x="-41.0" y="-15.0" />
+      <point x="1403.2543956043958" y="180.0" />
+      <point x="1046.4166666666667" y="180.0" />
+      <point x="58.66666666666674" y="15.0" />
+    </edge>
+    <edge source="org.springframework.web.servlet.view.freemarker" target="org.springframework.web.servlet.view.AbstractTemplateView">
+      <point x="-37.5" y="-15.0" />
+      <point x="801.3938186813189" y="330.0" />
+      <point x="787.7543956043958" y="330.0" />
+      <point x="-59.0" y="15.0" />
+    </edge>
+  </edges>
+  <settings layout="Hierarchic Group" zoom="1.1403979639055992" x="1590.5094952118163" y="305.0246164763788" />
+  <SelectedNodes>
+    <node>org.springframework.web.servlet.view.DefaultRequestToViewNameTranslator</node>
+  </SelectedNodes>
+  <Categories />
+  <SCOPE>All</SCOPE>
+  <VISIBILITY>private</VISIBILITY>
+</Diagram>
+
