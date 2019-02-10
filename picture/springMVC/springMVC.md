@@ -266,3 +266,28 @@ protected void doRegisterBeanDefinitions(Element root) {
 ```
 
 首先获取 profile 元素，如果当前配置文件不属于活动的 profile 则，直接返回不解析次配置文件。
+
+调用 parseBeanDefinitions 解析跟级别的document元素。 pre 和 post 是钩子。
+
+```java
+protected void parseBeanDefinitions(Element root, BeanDefinitionParserDelegate delegate) {
+   if (delegate.isDefaultNamespace(root)) {
+      NodeList nl = root.getChildNodes();
+      for (int i = 0; i < nl.getLength(); i++) {
+         Node node = nl.item(i);
+         if (node instanceof Element) {
+            Element ele = (Element) node;
+            if (delegate.isDefaultNamespace(ele)) {
+               parseDefaultElement(ele, delegate);
+            }
+            else {
+               delegate.parseCustomElement(ele);
+            }
+         }
+      }
+   }
+   else {
+      delegate.parseCustomElement(root);
+   }
+}
+```
