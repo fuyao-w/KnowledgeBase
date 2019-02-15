@@ -163,7 +163,7 @@ public interface NavigableMap<K,V> extends SortedMap<K,V>
 
 ## Dictionary ##
 
-```
+```java
 public abstract
 class Dictionary<K,V>
 ```

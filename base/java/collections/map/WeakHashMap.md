@@ -8,7 +8,7 @@ public class WeakHashMap<K,V> extends AbstractMap<K,V>
 ### java doc 
 
 基于哈希表的Map接口实现，带弱键。当WeakHashMap的密钥不再正常使用时，它将自动被删除。更确切地说，给定密钥的映射的存在不会阻止密钥被垃圾收集器丢弃，即，gc开始，判定回收，最终回收。当一个键被丢弃时，它的条目将被有效地从Map中删除，因此该类的行为与其他Map实现略有不同。
-支持空值和空值。该类具有与HashMap类相似的性能特征，并具有与初始容量和负载因子相同的效率参数。
+支持空键和空值。该类具有与HashMap类相似的性能特征，并具有与初始容量和负载因子相同的效率参数。
 
 与大多数集合类一样，此类不同步。可以使用Collections.synchronizedMap方法构造同步的WeakHashMap。
 
@@ -18,7 +18,7 @@ WeakHashMap类的行为部分取决于垃圾收集器的操作，因此几个熟
 
 WeakHashMap中的每个关键对象都间接存储为弱引用的引用对象。因此，只有在垃圾收集器清除了对映射内部和外部的弱引用之后，才会自动删除密钥。
 
-实现说明：WeakHashMap中的值对象由普通的强引用保存。因此，应该注意确保值对象不直接或间接地强烈引用它们自己的密钥，因为这将防止密钥被丢弃。请注意，值对象可以通过WeakHashMap本身间接引用其键;也就是说，值对象可以强烈地引用一些其他关键对象，其关联的值对象又强烈地引用第一值对象的关键字。如果映射中的值不依赖于持有对它们的强引用的映射，则处理此问题的一种方法是在插入之前将值本身包装在WeakReferences中，如：m.put（key，new WeakReference（value）），然后解开每一个。
+实现说明：WeakHashMap中的值对象由普通的强引用保存。因此，应该注意确保值对象不直接或间接地强烈引用它们自己的key，因为这将防止key 被丢弃。请注意，值对象可以通过WeakHashMap 本身间接引用其键;也就是说，值对象可以强引用一些其他关键对象，其关联的值对象又强引用第一值对象的关键字。如果映射中的值不依赖于持有对它们的强引用的映射，则处理此问题的一种方法是在插入之前将值本身包装在WeakReferences中，如：m.put（key，new WeakReference（value）），然后解开每一个。
 
 所有这个类的“集合视图方法”返回的集合的迭代器方法返回的迭代器是快速失败的：如果在创建迭代器之后的任何时候对映射进行结构修改，除非通过迭代器自己的删除方法，迭代器将抛出ConcurrentModificationException。因此，在并发修改的情况下，迭代器快速而干净地失败，而不是在未来的未确定时间冒任意，非确定性行为的风险。
 
@@ -40,7 +40,7 @@ private final ReferenceQueue<Object> queue = new ReferenceQueue<>();
 private static final Object NULL_KEY = new Object();
 ```
 
-其他的字段跟HashMap相同，queue对象是被回收的虚引用对象的WeekReference队列,需要通过此队列将，没有用的WeekReference对象清除。
+其他的字段跟HashMap相同，queue对象是被回收的虚引用对象的WeekReference队列,需要通过此队列，将没有用的WeekReference对象清除。
 
 NULL_KEY代表key为null。用于区分key为null是，没有这个键，开始null被作为了键。
 ### 分析
@@ -142,4 +142,4 @@ WeakHashMap的结构与HashMap基本相同，不同的是WeakHashMap的Entry数�
             }
         }
     }
-```
+ ```

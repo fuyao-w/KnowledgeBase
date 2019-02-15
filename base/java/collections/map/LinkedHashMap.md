@@ -1,6 +1,6 @@
 ## LinkedHashMap
 
-```
+```java
 public class LinkedHashMap<K,V> extends HashMap<K,V>
     implements Map<K,V>
 ```
@@ -11,7 +11,7 @@ Map接口的哈希表和链表实现，具有可预测的迭代顺序。 此实�
 
 此实现使其客户端免受HashMap（和Hashtable）提供的未指定的，通常混乱的排序，而不会导致与TreeMap相关的成本增加。 无论原始Map的实现如何，它都可用于生成与原始Map具有相同顺序的Map副本：
 
-```
+```java
    void foo(Map m) {
          Map copy = new LinkedHashMap(m);
          ...
@@ -40,7 +40,7 @@ Map接口的哈希表和链表实现，具有可预测的迭代顺序。 此实�
 
 ### 内部类
 
-```
+```java
 static class Entry<K,V> extends HashMap.Node<K,V> {
     Entry<K,V> before, after;
     Entry(int hash, K key, V value, Node<K,V> next) {
@@ -53,7 +53,7 @@ LinkedHashMap的在Node的基础上增加了before和after两个变量，变量�
 
 ###  字段
 
-```
+```java
 /**
  * 双向链表的头（最年长）。
  */
@@ -72,7 +72,7 @@ final boolean accessOrder;
 
 ### 分析
 
-```
+```java
 private void linkNodeLast(LinkedHashMap.Entry<K,V> p) {
     LinkedHashMap.Entry<K,V> last = tail;
     tail = p;
@@ -85,7 +85,7 @@ private void linkNodeLast(LinkedHashMap.Entry<K,V> p) {
 }
 ```
 
-```
+```java
 Node<K,V> newNode(int hash, K key, V value, Node<K,V> e) {
     LinkedHashMap.Entry<K,V> p =
         new LinkedHashMap.Entry<>(hash, key, value, e);
@@ -96,7 +96,7 @@ Node<K,V> newNode(int hash, K key, V value, Node<K,V> e) {
 
 LinkedHashMap继承自HashMap，添加了一些处理before,after指针的方法，`linkNodeLast`新创建Node的时候，将最后一个节点赋值给新建节点的`before`变量。
 
-```
+```java
 void afterNodeRemoval(Node<K,V> e) { // unlink
     LinkedHashMap.Entry<K,V> p =
         (LinkedHashMap.Entry<K,V>)e, b = p.before, a = p.after;
@@ -114,7 +114,7 @@ void afterNodeRemoval(Node<K,V> e) { // unlink
 
 `afterNodeRemoval`方法在删除节点后，将原节点的前后节点通过after,before变量，连接起来。
 
-```
+```java
 void afterNodeInsertion(boolean evict) { // possibly remove eldest
     LinkedHashMap.Entry<K,V> first;
     if (evict && (first = head) != null && removeEldestEntry(first)) {
@@ -124,9 +124,9 @@ void afterNodeInsertion(boolean evict) { // possibly remove eldest
 }
 ```
 
-`afterNodeInsertion`是留给开发者使用的钩子方法，`removeEldestEntry`方法默认返回false，如果想实现一个保留固定元素数量的缓存Map，可以继承LinkedHashMap实现`removeEldestEntry`,判断当前持有元素数量是否已达到上限。
+`removeEldestEntry`是留给开发者使用的钩子方法，`removeEldestEntry`方法默认返回false，如果想实现一个保留固定元素数量的缓存Map，可以继承LinkedHashMap实现`removeEldestEntry`,判断当前持有元素数量是否已达到上限。
 
-```
+```java
 void afterNodeAccess(Node<K,V> e) { // move node to last
     LinkedHashMap.Entry<K,V> last;
     if (accessOrder && (last = tail) != e) {

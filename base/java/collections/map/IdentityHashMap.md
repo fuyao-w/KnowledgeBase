@@ -1,6 +1,6 @@
 ## IdentityHashMap
 
-```
+```java
 public class IdentityHashMap<K,V> extends AbstractMap<K,V>
     implements Map<K,V>, java.io.Serializable, Cloneable
 ```
@@ -53,7 +53,8 @@ private static final int MINIMUM_CAPACITY = 4;
  * 由具有参数的任一构造函数.
  * 必须是二的次幂 值 <= 1<<29.
  *
- * 实际上，map可以容纳不超过MAXIMUM_CAPACITY-1项，因为它必须至少有一个带   *  键== null的槽，以避免get（），put（），remove（）中的无限循环
+ * 实际上，map可以容纳不超过MAXIMUM_CAPACITY-1项，因为它必须至少有一个带   
+ *  key == null的槽，以避免get（），put（），remove（）中的无限循环
  */
 private static final int MAXIMUM_CAPACITY = 1 << 29;
 
@@ -180,4 +181,4 @@ private static int nextKeyIndex(int i, int len) {
 
 ### 总结
 
-IdentityHashMap比较特殊，通过`hash`和`==`来获取key。所有元素只存储在数组中，没有HashMap中ucket的概念。并且构造方法里面的期望值参数，也不是数组的初始值。而是扩大的四倍的2次幂数。
+IdentityHashMap比较特殊，通过`hash`和`==`来获取key。所有元素只存储在数组中，没有HashMap中bucket的概念。并且构造方法里面的期望值参数，也不是数组的初始值。而是扩大的四倍的2次幂数。

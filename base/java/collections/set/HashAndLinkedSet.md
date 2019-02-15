@@ -1,7 +1,9 @@
 ## HashSet ##
 
-    public class HashSet<E> extends AbstractSet<E>
-           implements Set<E>, Cloneable, java.io.Serializable
+```java
+public class HashSet<E> extends AbstractSet<E>
+       implements Set<E>, Cloneable, java.io.Serializable
+```
 
 ### java doc ###
 
@@ -19,28 +21,34 @@
 ### 字段 ###
 
 
-    private transient HashMap<E,Object> map;
+```java
+private transient HashMap<E,Object> map;
 
-    // Dummy value to associate with an Object in the backing Map
-    private static final Object PRESENT = new Object();
+// Dummy value to associate with an Object in the backing Map
+private static final Object PRESENT = new Object();
+```
 
 ### 构造方法 ###
 
-    public HashSet() {
-        map = new HashMap<>();
-    }
+```java
+public HashSet() {
+    map = new HashMap<>();
+}
 
-    public HashSet(Collection<? extends E> c) {
-        map = new HashMap<>(Math.max((int) (c.size()/.75f) + 1, 16));
-        addAll(c);
-    }
-    //构造一个新的空链接哈希集。 （此包私有构造函数仅由LinkedHashSet使用。）
-    //后备HashMap实例是具有指定初始容量和指定加载因子的LinkedHashMap。
-    HashSet(int initialCapacity, float loadFactor, boolean dummy) {
-        map = new LinkedHashMap<>(initialCapacity, loadFactor);
-    }
+public HashSet(Collection<? extends E> c) {
+    map = new HashMap<>(Math.max((int) (c.size()/.75f) + 1, 16));
+    addAll(c);
+}
+//构造一个新的空链接哈希集。 （此包私有构造函数仅由LinkedHashSet使用。）
+//后备HashMap实例是具有指定初始容量和指定加载因子的LinkedHashMap。
+HashSet(int initialCapacity, float loadFactor, boolean dummy) {
+    map = new LinkedHashMap<>(initialCapacity, loadFactor);
+}
+```
 
 ### 分析 ###
+
+
 
 从构造方法看出，HashSet是hashMap的封装，而且他还有包私有的构造方法将LinkedHashMap作为存储元素的容器，注释说明这是为了构造LinkedHashSet准备的。
 如果根据其他的集合获取HashSet，那么他的初始化长度为，集合的长度/0.75 +1 与16的最大值。
@@ -55,10 +63,12 @@ Set接口的哈希表和链表实现，具有可预测的迭代顺序。 此实�
 
 此实现使其客户端免受HashSet提供的未指定的，通常是混乱的排序，而不会导致与TreeSet相关的增加的成本。 无论原始集合的实现如何，它都可用于生成与原始集合具有相同顺序的集合的副本：
 
-     void foo(Set s) {
-         Set copy = new LinkedHashSet(s);
-         ...
-     }
+```java
+ void foo(Set s) {
+     Set copy = new LinkedHashSet(s);
+     ...
+ }
+```
 
 如果模块在输入上获取集合，复制它，然后返回其顺序由副本确定的结果，则此技术特别有用。 （客户通常会欣赏按照提交的顺序返回的内容。）
 此类提供所有可选的Set操作，并允许null元素。与HashSet一样，它为基本操作（添加，包含和删除）提供了恒定时间性能，假设散列函数在桶之间正确地分散元素。由于维护链表的额外费用，性能可能略低于HashSet的性能，但有一个例外：对LinkedHashSet的迭代需要与集合大小成比例的时间，无论其容量如何。对HashSet的迭代可能更昂贵，需要与其容量成比例的时间。
@@ -75,22 +85,24 @@ Set接口的哈希表和链表实现，具有可预测的迭代顺序。 此实�
 
 ### 构造方法 ###
 
-    public LinkedHashSet(int initialCapacity, float loadFactor) {
-            super(initialCapacity, loadFactor, true);
-        }
-
-    public LinkedHashSet(int initialCapacity) {
-        super(initialCapacity, .75f, true);
+```java
+public LinkedHashSet(int initialCapacity, float loadFactor) {
+        super(initialCapacity, loadFactor, true);
     }
 
-    public LinkedHashSet() {
-        super(16, .75f, true);
-    }
+public LinkedHashSet(int initialCapacity) {
+    super(initialCapacity, .75f, true);
+}
 
-    public LinkedHashSet(Collection<? extends E> c) {
-        super(Math.max(2*c.size(), 11), .75f, true);
-        addAll(c);
-    }
+public LinkedHashSet() {
+    super(16, .75f, true);
+}
+
+public LinkedHashSet(Collection<? extends E> c) {
+    super(Math.max(2*c.size(), 11), .75f, true);
+    addAll(c);
+}
+```
 
 LinkedHashSet直接继承了HashSet，可以看出他默认的容量是16，如果通过其他集合构造的话，最小是11和二倍数组容量的最大值。加载因子都是0.75。
 

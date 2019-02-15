@@ -28,7 +28,7 @@ HashMap的一个实例有两个影响其性能的参数：初始容量和负载�
 
 ### 静态类
 
-```
+```JAVA
 static class Node<K,V> implements Map.Entry<K,V> {
 
         final int hash;
@@ -44,11 +44,11 @@ static class Node<K,V> implements Map.Entry<K,V> {
 
 实施说明。
 
-此map通常用作箱（bucketed）哈希表，但是 当bins变得太大时，bins转换成 TreeNodes，与java.util.TreeMap中的结构类似 。 大多数方法都尝试使用bins，但是 适用时中继到TreeNode方法（只需检查 节点的实例）。 TreeNodes的Bin可以像其他任何一样遍历和使用，但是当元素过多时还支持更快的查找。 但是，由于绝大多数的bins 正常使用不会充满满容量，检查 tree bins的存在可能会在table方法中延迟。 树容器（其元素都是TreeNodes的bin） 主要由hashCode排序，但在ties的情况下，如果两个
-元素是相同的“C类实现Comparable <C>”， 然后使用他们的`compareTo`方法进行排序。 （我们 通过反射保守地检查泛型类型以进行验证 。 请参阅compareClassFor方法。 增加的复杂性 在提供最坏情况O（log n）时，tree bin 的价值是值得的。 当密钥具有不同的哈希值或可订购时，树箱的额外复杂性值得提供最坏情况的O（log n）操作，因此，在hashCode（）方法返回分布不佳的值的意外或恶意用法中，性能会优雅地降级， 返回分布不均的值以及中的值。 以及许多键共享hashCode的那些，只要它们也是可比较的。
+此map通常用作箱（bucket）哈希表，但是 当bins变得太大时，bins转换成 TreeNodes，与java.util.TreeMap中的结构类似 。 大多数方法都尝试使用bins，但是 适用时中继到TreeNode方法（只需检查 节点的实例）。 TreeNodes的Bin可以像其他任何一样遍历和使用，但是当元素过多时还支持更快的查找。 但是，由于绝大多数的bins 正常使用不会充满满容量，检查 tree bins的存在可能会在table方法中延迟。 树容器（其元素都是TreeNodes的bin） 主要由hashCode排序，但在ties的情况下，如果两个
+元素是相同的“C类实现Comparable <C>”， 然后使用他们的`compareTo`方法进行排序。 （我们 通过反射保守地检查泛型类型以进行验证 。 请参阅compareClassFor方法。 增加的复杂性 在提供最坏情况O（log n）时，tree bin 的价值是值得的。 当key 钥具有不同的哈希值或有序时，树箱的额外复杂性值得提供最坏情况的O（log n）操作，因此，在hashCode（）方法返回分布不佳的值的意外或恶意用法中，性能会优雅地降级， 返回分布不均的值以及中的值。 以及许多键共享hashCode的那些，只要它们也是可比较的。
  （如果这些都不适用，与不采取预防措施相比，我们可能在时间和空间上浪费大约两倍。 但是，唯一已知的案例源于糟糕的用户编程实践，这些实践已经非常缓慢，这几乎没有什么区别。）
 
-因为TreeNodes大约是常规节点大小的两倍，所以我们 仅当 bins 包含足够的节点以保证使用时才使用它们 （见TREEIFY_THRESHOLD）。 当它们变得太小时（由于 移除或调整大小）它们被转换回普通箱。在具有良好分布的`hashCodes`的用法中，树箱是 很少用。 理想情况下，在随机hashCodes下，频率为 箱中的节点遵循泊松分布带有 默认大小调整的平均参数约为0.5 阈值为0.75，虽然因为有很大的差异 调整粒度。 忽略方差，预期
+因为TreeNodes大约是常规节点大小的两倍，所以我们 仅当 bins 包含足够的节点以保证使用时才使用它们 （见TREEIFY_THRESHOLD）。 当它们变得太小时（由于 移除或调整大小）它们被转换回普通箱。在具有良好分布的`hashCodes`的用法中，tree是 很少用。 理想情况下，在随机hashCodes下，频率为 箱中的节点遵循泊松分布带有 默认大小调整的平均参数约为0.5 阈值为0.75，虽然因为有很大的差异 调整粒度。 忽略方差，预期
 列表大小k的出现是
 
 （exp（-0.5）pow（0.5，k）/ factorial（K））
@@ -87,7 +87,7 @@ static class Node<K,V> implements Map.Entry<K,V> {
 static final int DEFAULT_INITIAL_CAPACITY = 1 << 4; // 16
 ```
 
-```
+```java
 /**
  * 如果具有参数的任一构造函数隐式指定较高值，则使用最大容量。
  * 2 的次幂 <= 1<<30.
@@ -95,23 +95,25 @@ static final int DEFAULT_INITIAL_CAPACITY = 1 << 4; // 16
 static final int MAXIMUM_CAPACITY = 1 << 30;
 ```
 
-```
+
+
+```java
 /**
  * 在构造函数中未指定时使用的加载因子。
  */
 static final float DEFAULT_LOAD_FACTOR = 0.75f;
 ```
 
-```
+```java
 /**
   *bin计数阈值，用于使用树而不是bin的列表. 
   *将元素添加到具有至少这么多节点的bin时，bin被转换为树。
-  *该值必须大于2并且应该至少为8以与树木移除中的假设相关联，以便在收缩时转换   *回普通箱。
+  *该值必须大于2并且应该至少为8以与树木移除中的假设相关联，以便在收缩时转换   *回普通bin。
   */
 static final int TREEIFY_THRESHOLD = 8;
 ```
 
-```
+```java
 /**
  * 用于在调整大小操作期间解除（拆分）bin的bin计数阈值。
  * 应小于TREEIFY_THRESHOLD，最多6个与去除时的收缩检测啮合。
@@ -119,7 +121,7 @@ static final int TREEIFY_THRESHOLD = 8;
 static final int UNTREEIFY_THRESHOLD = 6;
 ```
 
-```
+```java
 /**
  * 容器可以树化的最小表容量。
  *（否则，如果bin中的节点太多，则会调整表的大小。）
@@ -129,7 +131,7 @@ static final int UNTREEIFY_THRESHOLD = 6;
 static final int MIN_TREEIFY_CAPACITY = 64;
 ```
 
-```
+```java
 /**
  * 该表在首次使用时初始化，并根据需要调整大小。 分配时，长度始终是2的幂。    	*（我们还在一些操作中容忍长度为零，以允许当前不需要的自举机制.)
  */
@@ -442,4 +444,4 @@ final Node<K,V> getNode(int hash, Object key) {
 HashMap的实现逻辑较为简单，但是有一个问题需要考虑，**这里的jdk源码都是 `java11`的，结构较8又有了变化。在`java8`之前HashMap在transfer()函数将旧数组元素迁移到新数组的时候，链表的顺序会被颠倒。而HashMap是非线程安全的，在多线程的情况下可能会出现链表成环的现象，从`get`时造成死循环。11里面链表的顺序没有被改变，不会出现链表成环的操作**
 还有一个问题，是为什么数组的容量必须为2的次幂呢？回顾`putVal()`在定位新元素位置是怎么做的，
 `(n- 1) & hash`它就相当于取模操作，但是当n为奇数的时候不能正确的获得与取模操作一样的结果。
-所以，要让数组的容量为2的次幂。最后留意一下吗现在插入链表的方式是尾部插入。
+所以，要让数组的容量为2的次幂。最后留意一下现在插入链表的方式是尾部插入。

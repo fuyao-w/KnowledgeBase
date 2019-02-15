@@ -1,6 +1,8 @@
 ## EnumSet ##
 
-    public abstract class EnumSet<E extends Enum<E>> extends AbstractSet<E>
+```java
+public abstract class EnumSet<E extends Enum<E>> extends AbstractSet<E>
+```
 
 ### java doc ###
 
@@ -13,43 +15,49 @@
 设置
 
     <MyEnum> s = Collections.synchronizedSet（EnumSet.noneOf（MyEnum.class））;
- 
+
 实施说明：所有基本操作都在恒定时间内执行。它们很可能（虽然不能保证）比它们的HashSet对应物快得多。如果它们的参数也是枚举集，即使批量操作也会在恒定时间内执行。
 
 ### 字段 ###
 
-    /**
-     * 该集合中所有元素的类。
-     */
-    final transient Class<E> elementType;
+```java
+/**
+ * 该集合中所有元素的类。
+ */
+final transient Class<E> elementType;
 
-    /**
-     * 所有包含E.的值.（缓存性能。）
-     */
-    final transient Enum<?>[] universe;
+/**
+ * 所有包含E.的值.（缓存性能。）
+ */
+final transient Enum<?>[] universe;
+```
 
 ### 分析 ###
 
 EnumSet是一个特殊的抽象类，它里面只有静态方法，通过静态方法创建枚举set。返回的是它的子类，RegularEnumSet或者JumboEnumSet。
 
-    public static <E extends Enum<E>> EnumSet<E> of(E e) {
-        EnumSet<E> result = noneOf(e.getDeclaringClass());
-        result.add(e);
-        return result;
-    }
+```java
+public static <E extends Enum<E>> EnumSet<E> of(E e) {
+    EnumSet<E> result = noneOf(e.getDeclaringClass());
+    result.add(e);
+    return result;
+}
+```
 
 可以通过`of()`获取EnumSet实例，`noneOf()`方法是重点：
 
-    public static <E extends Enum<E>> EnumSet<E> noneOf(Class<E> elementType) {
-        Enum<?>[] universe = getUniverse(elementType);
-        if (universe == null)
-            throw new ClassCastException(elementType + " not an enum");
+```java
+public static <E extends Enum<E>> EnumSet<E> noneOf(Class<E> elementType) {
+    Enum<?>[] universe = getUniverse(elementType);
+    if (universe == null)
+        throw new ClassCastException(elementType + " not an enum");
 
-        if (universe.length <= 64)
-            return new RegularEnumSet<>(elementType, universe);
-        else
-            return new JumboEnumSet<>(elementType, universe);
-    }
+    if (universe.length <= 64)
+        return new RegularEnumSet<>(elementType, universe);
+    else
+        return new JumboEnumSet<>(elementType, universe);
+}
+```
 
 `getUniverse()`方法返回了枚举类的枚举数组。作为缓存。提高性能。然后根据数组的长度选择创建的实例。
 这正是工厂模式的实现。
@@ -57,7 +65,9 @@ EnumSet是一个特殊的抽象类，它里面只有静态方法，通过静态�
 
 ## RegularEnumSet ##
 
-    class RegularEnumSet<E extends Enum<E>> extends EnumSet<E>
+```java
+class RegularEnumSet<E extends Enum<E>> extends EnumSet<E>
+```
 
 ### java doc ###
 
@@ -65,30 +75,34 @@ EnumSet的私有实现类，用于“常规大小”的枚举类型,具有64或�
 
 
 ### 字段 ###
-    /**
-     * 该集的位向量表示。 2^k 位表示该集合中存在universe[k].
-     */
-    private long elements = 0L;
+```java
+/**
+ * 该集的位向量表示。 2^k 位表示该集合中存在universe[k].
+ */
+private long elements = 0L;
+```
 
 
 ### 构造方法 ###
 
-    RegularEnumSet(Class<E>elementType, Enum<?>[] universe) {
-        super(elementType, universe);
-    }
+```java
+RegularEnumSet(Class<E>elementType, Enum<?>[] universe) {
+    super(elementType, universe);
+}
 
-    void addRange(E from, E to) {
-        elements = (-1L >>>  (from.ordinal() - to.ordinal() - 1)) << from.ordinal();
-    }
+void addRange(E from, E to) {
+    elements = (-1L >>>  (from.ordinal() - to.ordinal() - 1)) << from.ordinal();
+}
 
-    void addAll() {
-        if (universe.length != 0)
-            elements = -1L >>> -universe.length;
-    }
+void addAll() {
+    if (universe.length != 0)
+        elements = -1L >>> -universe.length;
+}
 
-    public int size() {
-        return Long.bitCount(elements);
-    }
+public int size() {
+    return Long.bitCount(elements);
+}
+```
 
 
 >如果左侧操作数的提升类型是int，则只使用右侧操作数的五个最低位作为移位距离。 就好像右手操作数受到按位逻辑AND运算符和掩码值0x1f（0b11111）的影响。 因此，实际使用的移位距离始终在0到31的范围内，包括0和31。
@@ -102,7 +116,9 @@ RegularEnumSet通过位操作long类型变量，来确定枚举值是否在Set�
 
 ## JumboEnumSet ##
 
-    class JumboEnumSet<E extends Enum<E>> extends EnumSet<E>
+```java
+class JumboEnumSet<E extends Enum<E>> extends EnumSet<E>
+```
 
 ### java doc ###
 
@@ -110,11 +126,13 @@ Enum Set的私有实现类，用于“jumbo”枚举类型,对应超过64个元�
 
 ### 字段 ###
 
-    //该集的位向量表示。 此数组的第j个元素的第i位表示此集合中存在Universe [64j + i]。
-    private long elements[];
+```java
+//该集的位向量表示。 此数组的第j个元素的第i位表示此集合中存在Universe [64j + i]。
+private long elements[];
 
-    // 冗余 - 为性能而维护
-    private int size = 0;
+// 冗余 - 为性能而维护
+private int size = 0;
+```
 
 ### 分析 ###
 
