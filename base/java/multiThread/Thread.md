@@ -192,7 +192,7 @@ public static native void sleep(long millis) throws InterruptedException;
 ```java
 //表示调用者暂时无法进展，直到其他活动发生一个或多个操作为止。 通过在自旋等待循环结构的每次迭代中调用此方法，调用线程向运行时指示它正在忙等待。 运行时可以采取措施来提高调用自旋等待循环结构的性能。
 //API注意：
-//作为一个例子，考虑一个类中的方法，该方法在循环中旋转，直到在该方法之外设置一些标志。 对onSpinWait方法的调用应该放在旋转循环中。
+//作为一个例子，考虑一个类中的方法，该方法在循环中旋转，直到在该方法之外设置一些标志。 对onSpinWait方法的调用应该放在旋转循环中。：
 —————————————————————————————————————————————————————————————————————
      class EventHandler {
          volatile boolean eventNotificationNotReceived;
