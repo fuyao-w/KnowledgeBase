@@ -33,7 +33,7 @@ public class ReentrantReadWriteLock
 
 ### java doc
 
-ReadWriteLock的实现，支持与ReentrantLock类似的语义。
+ReadWriteLock的实现，支持与 ReentrantLock 类似的语义。
 该类具有以下属性：
 
 - **Acquisition order**
@@ -100,7 +100,7 @@ Reentrancy还允许通过获取写锁定，然后读取锁定然后释放写入�
          //在释放写锁定之前通过获取读锁来降级
          rwl.readLock().lock();
        } finally {
-         rwl.writeLock().unlock(); // 解锁写入，仍然保持读取
+         rwl.writeLock().unlock(); //写锁解锁，仍然保持读取
        }
      }
 
@@ -147,8 +147,6 @@ ReentrantReadWriteLocks可用于在某些类型的集合的某些用途中提高
 
 实施说明
 此锁最多支持65535个递归写锁和65535个读锁。 尝试超过这些限制会导致锁定方法的错误抛出。
-
-
 
 ### 分析
 

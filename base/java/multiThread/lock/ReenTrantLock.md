@@ -1,4 +1,4 @@
-##  z·ReenTrantLock
+##  ReenTrantLock
 
 ```java
 public class ReentrantLock implements Lock, java.io.Serializable
@@ -37,15 +37,15 @@ ReentrantLock由最后成功锁定的线程拥有，但尚未解锁。当锁不�
 
 ### 分析
 
-重入锁作为并发包里面的常用对象，也是依赖于AQS实现的。并且通过实现AQS的钩子方法`tryAcquire`提供了同一线程多次获取锁的功能。还提供了公平获取和非公平（默认）获取锁的实现。
+重入锁作为并发包里面的常用对象，也是依赖于AQS实现的。并且通过实现AQS的模板方法`tryAcquire`提供了同一线程多次获取锁的功能。还提供了公平获取和非公平（默认）获取锁的实现。
 
 ```java
 abstract static class Sync extends AbstractQueuedSynchronizer
 ```
 
-Sync是此锁的同步控制基础。 在下面转换为公平和非公平版本。 使用AQS状态表示锁定的保持数。
+Sync是此锁的同步控制基础。 在下面转换为公平和非公平版本。 使用AQS `state` 表示锁定的保持数。
 
-Sync主要添加了一个非公平状态下获取锁的方法`nonfairTryAcquire`用于`tryLock`的实现实现了AQS的钩子方法`tryRelease`：
+Sync主要添加了一个非公平状态下获取锁的方法`nonfairTryAcquire`用于`tryLock`的实现并且实现了AQS的方法`tryRelease`：
 
 ```java
 final boolean nonfairTryAcquire(int acquires) {
@@ -87,7 +87,7 @@ protected final boolean tryRelease(int releases) {
 
 tryRelease释放当前线程占用的锁，将AQS.state减少，如果state为0就将当前占用锁线程设置为null。所以当前线程获取多少次锁，就必须释放相应的次数来释放锁。
 
-针对公平和非公平两个版本，有两个Sync的实现类`NonfairSync`和`FairSync`，两个都实现了钩子方法`tryAcquire`：
+针对公平和非公平两个版本，有两个Sync的实现类`NonfairSync`和`FairSync`，两个都实现了方法`tryAcquire`：
 
 ```java
 protected final boolean tryAcquire(int acquires) {
@@ -119,7 +119,7 @@ protected final boolean tryAcquire(int acquires) {
 }
 ```
 
-`FairSync`通过`hasQueuedPredecessors`实现只有在当前线程之前没有排队的情况下才可以尝试获取锁。换句话说公平锁不同的线程尝试修改state获取锁时候前面不能有线程在排队，所以大家占用锁的几率是一样的。
+FairSync`通过`hasQueuedPredecessors`实现只有在当前线程是头结点之后的第一个有效节点的情况下才可以尝试获取锁。换句话说公平锁不同的线程尝试修改state获取锁时候前面不能有线程在排队，所以大家占用锁的几率是一样的。
 
 ```java
 public final boolean hasQueuedPredecessors() {

@@ -47,6 +47,7 @@ public class CLHLock extends CLHAbslock {
         Node pre = tail.getAndSet(node);
         //保存当前节点的前驱节点
         preNode.set(pre);
+        
         while (pre.locked.get());
 
     }
