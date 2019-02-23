@@ -199,7 +199,116 @@ RDB 的缺点：
 
 针对 RDB 不适合实时持久化的问题，Redis 提供了 AOF 持久化方式来解决。
 
+### AOF
 
+AOF（append only file）持久化：以独立日志的方式每次记录写命令，重启时在重新执行AOF 文件中的没给你个达到恢复数据的目的。AOF 的主要作用是解决了数据持久化的实时性，目前已经是Redis 持久化的主流方式。
+
+#### 使用AOF
+
+开启 AOF 功能需要设置配置：appendonly yes ，默认不开启。AOF 文件名通过 appendfilename 配置设置，默认文件名是appendonly.aof 。保存路径同 RDB 持久化方式一致，通过 dir 配置指定。AOF 的工作流程操作：命令写入（append）、文件同步（sync）、文件重写（rewrite）、重启加载（load）。
+
+流程：
+
+1. 所有的写入命令会追加到 aof_buf （缓冲区）中。
+2. AOF 缓冲区根据对应的策略向硬盘做同步操作。
+3. 随着 AOF 文件越来越大，需要定期对 AOF 文件进行重写，达到压缩的目的。
+4. 当 Redis 服务器重启时，可以加载 AOF 文件进行数据恢复。
+
+#### 命令写入
+
+AOF 命令写入的内容直接是文本协议格式。例如 set hello world 命令，在 AOF 缓冲区回会追加如下文本：
+
+> 3\r\n$3\r\nest\r\n$5\nhello\r\n$5\r\nworld\r\n
+
+疑惑：
+
+1. AOF为什么直接采用文本协议格式？可能的理由如下：
+
+   * 文本协议具有很好的兼容性。
+   * 开启 AOF 后，所有写入命令都包含追加操作，直接采用协议格式，避免了二次处理的开销。
+   * 文本协议具有可读性，方便直接修改和处理。
+
+2.  AOF 为什么把命令追加到 aof_buf 中?Redis 使用单线程相应命令，如果每次AOF 文件命令都直接追加到硬盘，那么性能完全取决于当前硬盘负载。先写入缓冲区中，还有另外一个好处，Redis 可以提供多种缓冲区同步硬盘的策略，在性能和安全性方面做出平衡。
+
+
+#### 文件同步
+
+Redis 提供了多种 AOF 缓冲区同步文件策略，由参数appendfsync 控制
+
+|          |                                                              |
+| -------- | ------------------------------------------------------------ |
+| always   | 命令写入 aof_buf 后调用 fsync 操作同步到 AOF 文件，fsync 完成后线程返回 |
+| everysec | 命令写入 aof_buf 后调用系统 write 操作，write 完成后线程返回。fsync 同步文件操作由专门线程每秒调用一次。 |
+| no       | 命令写入 aof_buf 后调用 write 操作，不对AOF 文件做 fsync 同步，同步硬盘操作由操作系统负责，通常同步周期最长为 30 秒。 |
+
+系统调用 write 和 fsync 说明：
+
+* write 操作会出发延迟写（delay write）机制。 Linux 在内核提供页缓冲区用来提高硬盘I/O 性能。write 操作在写入系统缓冲区后直接返回。同步硬盘操作依赖于系统调度机制，例如：缓冲区页空间写满或达到热特定时间周期。同步文件之前，如果此时系统故障宕机，缓冲区内数据将丢失。
+* fsync 针对单个文件操作（比如 AOF 文件），做强制硬盘同步，fsync 将阻塞直到硬盘写入后返回，保证了数据的持久化。
+  * 配置为 always 时，每次写入都要同步AOF 文件，在一般的 SATA 硬盘上，Redis 只能支持大约几百 TPS 写入，显然跟Redis 高性能特性背道而驰，不建议配置。
+  * 配置为 no ，由于操作系统每次同步AOF 文件的周期不可控，而且会加大每次同步硬盘的数据，虽然提高了性能，但数据安全性无法保证。
+  * 配置为 everysec ，是建议的同步策略，也是默认配置，做到兼顾性能和数据安全性。理论上只有在系统突然宕机的情况下丢失1 秒的数据。
+
+#### 重写机制
+
+随着命令不断写入 AOF，文件会越来越大， 为了解决这个问题，Redis 引入 AOF 重写机制压缩文件体积。AOF 文件重写是把 Redis 进程内的数据转化为写命令同步到新 AOF 文件的过程。
+
+重写后 AOF 文件为什么可以变小？
+
+1. 继承内已经超时的数据不在写入文件
+2. 旧的 AOF 文件含有无效命令，如的del key1、serm keys、set a 111 等。重写使用进程内数据直接生成，这样新的 AOF 文件只保留最终数据的写入命令。
+3. 多条写命令可以合并为一个，如： lpush list a、 lpush list b、 lpush list c 可以转化为 lpush list a b c 。为了防止单条命令过大造成客户端缓冲区溢出，对于 list、set、hash、zset 等类型操作，以64 个元素为界拆分为多条。
+4. AOF 重写，降低了文件占用空间。除此之外，另一个目的是：更小的 AOF 文件可以更快地被 Redis 加载。
+
+AOF 重写过程可以手动出发和自动出发：
+
+* **手动触发**：直接调用 bgrewriteaof 命令。
+* **自动触发**：根据 auto-aof-rewrite-size 和 auto-aof-rewrite-percetenage 参数确定自动触发时机。
+  * auto-aof-rewrite-size ：表示运行 AOF 重写时文件最小体积，默认为64 MB。
+  * auto-aof-rewrite-percetenage ：代表当前 AOF 重写时文件空间（aof_current_size）和上一次重写后AOF 文件空间（aof_base_size）的比值。
+
+#### 执行过程
+
+1. 执行 AOF 重写请求。
+2. 如果当前进程正在执行 AOF重写，请求不执行并返回如下响应。
+
+> ERROR Background append only file rewriting already in progress
+
+3. 如果当前进程正在执行 bgsave 操作，重写命令演出到 bgsave 完成之后再执行，返回如下响应
+
+> Background append only file rewriting scheduled
+
+4. 父进程执行fork 创建子进程，开销等同于 bgsave 过程。
+
+5. 主进程 fork 操作完成后，继续响应其他命令。所有修改命令依然写入 AOF 缓冲区并根根据 appendfsync 策略同步到硬盘，保证原有 AOF 机制正确性。
+
+6. 由于 fork 操作运行写时复制技术，子进程只能共享 fork 操作时的内存数据。由于父进程依然响应命令，Redis 使用“AOF 重写缓冲区”，保存这部分新数据，防止新 AOF 文件生成期间丢失这部分数据。
+
+7. 子进程根据内存快照，按照命令合并规则写入到新的 AOF 文件。每次批量写入硬盘数据量由配置 aof-reerite-incremental-fsync 控制，默认为 32MB，防止单词刷盘数据过多造成硬盘阻塞。
+
+8. 新 AOF 文件写入完成后，子进程发送信号给父进程，父进程更新统计信息。
+
+9. 父进程把 AOF 重写缓冲区的数据写入到新的 AOF 文件。
+
+10. 使用新 AOF 文件替换老文件，完成 AOF 重写。
+
+### 重启加载
+
+AOF 和 RDB 文件都可以用于服务器重启时的数据恢复。如果开启了 AOF ，则优先使用。
+
+### 文件校验
+
+加载损坏的 AOF 文件时会拒绝启动，并打印如下日志：
+
+> Bad file format reading the append only file:make a backup of your AOF file , then yse ./redis-check-aof --fix <filename>
+
+AOF 文件可能存在结尾不完整的请款，比如机器突然掉电导致 AOF 文件尾部命令写入不全。Redis 为我们提供了 aof-load-truncated 配置来兼容这种情况，默认开启。加载 AOF 时，
+
+> !!! waring : short read while loading the AOF fie !!!
+>
+> !!! Truncating the AOF at offset 397856725 !!!
+>
+> AOF loaded anyway beacuse aof-load-truncated is enabled
 
 
 
