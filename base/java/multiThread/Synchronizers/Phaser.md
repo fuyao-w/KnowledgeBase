@@ -1,14 +1,18 @@
 ## Phaser
 
+[讲解]: https://segmentfault.com/a/1190000015979879#articleHeader9
+
+
+
 ### java doc
 
 可重用的同步屏障，功能类似于CyclicBarrier和CountDownLatch，但支持更灵活的使用。
 
-**Registration**。 与其他障碍的情况不同，登记在phaser上同步的各方数量可能会随时间而变化。 任务可以随时注册（使用方法`register（）`，`bulkRegister（int）``或构建初始数量的构造者的形式），并且可选地在任何到达时注销（使用arrivalAndDeregister（）`）。 与大多数基本同步结构一样，注册和注销仅影响内部计数; 他们没有建立任何进一步的内部簿记，因此任务无法查询他们是否已注册。 （但是，你可以通过继承这个类来引入这样的簿记。）
+**Registration**。 与其他障碍的情况不同，登记在phaser上同步的各方数量可能会随时间而变化。 任务可以随时注册（使用方法`register（）`，`bulkRegister（int）`或构建初始数量的构造者的形式），并且可选地在任何到达时注销（使用arrivalAndDeregister（）`）。 与大多数基本同步结构一样，注册和注销仅影响内部计数; 他们没有建立任何进一步的内部簿记，因此任务无法查询他们是否已注册。 （但是，你可以通过继承这个类来引入这样的簿记。）
 
 **Synchronization**。 像CyclicBarrier一样，可以反复等待Phaser。 方法arrivalAndAwaitAdvance（）具有类似于`CyclicBarrier.await`的效果。 每一代phaser都有一个相关的相位数。 阶段编号从零开始，并在所有各方到达phaser时前进，在到达Integer.MAX_VALUE后回绕到零。 使用阶段编号可以在到达phaser时以及在等待其他人时通过可由任何注册方调用的两种方法独立控制操作：
 
-- **Arrival**。方法arri（）和arrivalAndDeregister（）记录到达。这些方法不会阻塞，但返回相关的到达阶段号;也就是说，到达所应用的phaser的相数。当给定阶段的最后一方到达时，执行可选动作并且阶段前进。这些动作由触发相位超前的一方执行，并通过覆盖方法onAdvance（int，int）来安排，该方法也控制终止。覆盖此方法与为CyclicBarrier提供屏障操作类似但更灵活。
+- **Arrival**。方法`arrive（）`和`arrivalAndDeregister（）`记录到达。这些方法不会阻塞，但返回相关的到达阶段号;也就是说，到达所应用的phaser的相数。当给定阶段的最后一方到达时，执行可选动作并且阶段前进。这些动作由触发相位超前的一方执行，并通过覆盖方法onAdvance（int，int）来安排，该方法也控制终止。覆盖此方法与为CyclicBarrier提供屏障操作类似但更灵活。
 - **Waiting**。方法awaitAdvance（int）需要一个指示到达阶段号的参数，并在phaser前进到（或已经处于）不同阶段时返回。与使用CyclicBarrier的类似结构不同，方法awaitAdvance继续等待，即使等待的线程被中断。可以使用可中断和超时版本，但在任务中断或超时等待时遇到的异常不会更改phaser的状态。如有必要，您可以在调用forceTermination之后，在这些异常的处理程序中执行任何相关的恢复。在ForkJoinPool中执行的任务也可以使用Phasers。如果池的parallelismLevel可以容纳最大数量的同时阻塞方，则可确保进度。
 
 **Termination**。 phaser可以进入终止状态，可以使用方法isTerminated（）来检查。 在终止时，所有同步方法立即返回而不等待提前，如负返回值所示。 同样，终止时注册的尝试也没有效果。 当onAdvance的调用返回true时触发终止。 如果取消注册导致注册方的数量变为零，则默认实现返回true。 如下所示，当phaser控制具有固定迭代次数的动作时，通常很方便地覆盖该方法以在当前相位数达到阈值时引起终止。 方法forceTermination（）也可用于突然释放等待线程并允许它们终止。
@@ -25,7 +29,7 @@
 
 ```java
  void runTasks(List<Runnable> tasks) {
-   Phaser startingGate = new Phaser(1); // "1" to register self
+   Phaser startingGate = new Phaser(1); // "1" to register self 
    // create and start threads
    for (Runnable task : tasks) {
      startingGate.register();
@@ -35,7 +39,7 @@
      }).start();
    }
 
-   // deregister self to allow threads to proceed
+   // deregister self to allow threads to proceed ，本阶段结束https://segmentfault.com/a/1190000015979879#articleHeader9
    startingGate.arriveAndDeregister();
  }
 ```

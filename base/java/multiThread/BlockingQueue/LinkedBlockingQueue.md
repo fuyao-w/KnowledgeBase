@@ -1,5 +1,7 @@
 ## LinkedBlockingQueue
 
+固定大小线程池的阻塞队列
+
 ```java
 public class LinkedBlockingQueue<E> extends AbstractQueue<E>
         implements BlockingQueue<E>, java.io.Serializable 

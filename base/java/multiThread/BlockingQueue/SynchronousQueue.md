@@ -2,6 +2,8 @@
 
 ## SynchronousQueue
 
+Cached线程池的阻塞队列
+
 ```java
 public class SynchronousQueue<E> extends AbstractQueue<E>
     implements BlockingQueue<E>, java.io.Serializable {
@@ -18,7 +20,7 @@ public class SynchronousQueue<E> extends AbstractQueue<E>
 
 ### 分析
 
-该类实现了W.N.Scherer III和M.L.Scott的“Nonblocking Concurrent Objects with Condition Synchronization”中描述的双重栈和双重队列算法的扩展。 （Lifo）堆栈用于非公平模式，而（Fifo）队列用于公平模式。两者的表现大致相似。 Fifo通常支持争用下更高的吞吐量，但Lifo在常见应用程序中保持更高的线程局部性。
+该类实现了W.N.Scherer III和M.L.Scott的“Nonblocking Concurrent Objects with Condition Synchronization”中描述的双重栈和双重队列算法的扩展。 （Lifo）栈用于非公平模式，而（Fifo）队列用于公平模式。两者的表现大致相似。 Fifo通常支持争用下更高的吞吐量，但Lifo在常见应用程序中保持更高的线程局部性。
 双队列（以及类似的堆栈）是在任何给定时间或者保持“数据” - 由`put`操作提供的项目，或“request” - 表示获取操作的时隙，或者是空的。 对“fulfill”的调用（即，从保持数据的队列请求项目的调用，或反之亦然）使互补节点出列（节点配对成功）。 这些队列最有趣的特性是任何操作都可以确定队列所处的模式，并在不需要锁定的情况下采取相应的行动。
 
 队列和堆栈都扩展了抽象类Transferer，它定义了执行put或take的单个方法传输。这些统一为单一方法，因为在双数据结构中，put和take操作是对称的，因此几乎所有代码都可以组合。由此产生的转移方法是长期的，但是如果分解成几乎重复的部分，则更容易遵循。
@@ -217,7 +219,7 @@ SNode awaitFulfill(SNode s, boolean timed, long nanos) {
 }
 ```
 
-`awaitFulfill`通过spins字段确定当前线程应该自旋的次数，然后进入到自旋中，等待节点的match被填充。每次将spins减1。如果已经超时，则将当前节点取消。如果spins较少到0，则将当前线程赋值给节点的waiter字段，然后重新进行一次自旋，然后将当前线程阻塞。
+`awaitFulfill`通过spins字段确定当前线程应该自旋的次数，然后进入到自旋中，等待节点的match被填充。每次将spins减1。如果已经超时，则将当前节点取消。如果spins减少到0，则将当前线程赋值给节点的waiter字段，然后重新进行一次自旋，然后将当前线程阻塞。
 
 重新调到外层方法，`awaitFulfill`返回了match字段。如果发现当前节点被取消，则清除当前节点，然后返回null。如果当前节点在等待期间有有节点插入了栈，则将头结点后移到当前节点后面。也就是栈顶两个节点进行了模式匹配，将元素传递出去。最后返回，如果当前是REQUEST模式。则返回awaitFulfill方法返回的match.item，否则返回当前节点的item(为null)。
 

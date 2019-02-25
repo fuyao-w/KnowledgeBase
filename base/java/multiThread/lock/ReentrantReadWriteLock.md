@@ -288,7 +288,7 @@ protected final int tryAcquireShared(int unused) {
         r < MAX_COUNT &&
         compareAndSetState(c, c + SHARED_UNIT)) {
         if (r == 0) {           
-            firstReader = current; //如果过读锁持有数量等于0，则设置当前线程为第一个持有读锁的线程
+            firstReader = current; //如果读锁持有数量等于0，则设置当前线程为第一个持有读锁的线程
             firstReaderHoldCount = 1; //firstReader数量设为1
         } else if (firstReader == current) {//如果当前线程就是第一个持有读锁的线程，则firstReader计数加一
             firstReaderHoldCount++;  

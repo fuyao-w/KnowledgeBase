@@ -100,7 +100,7 @@ public void await() throws InterruptedException {
 }
 ```
 
-这个`await`与Condition类中的`await`作用类似：
+这个`await`与Condition类中的`await`作用类似，阻塞调用线程：
 
 ```java
 public final void acquireSharedInterruptibly(int arg)
@@ -118,7 +118,7 @@ protected int tryAcquireShared(int acquires) {
 }
 ```
 
-在`tryAcquireShared`里的实现与正常情况相反，只要state不为0，就会返回-1。将当前的现场阻塞。直到其他线程将state降为0。
+在`tryAcquireShared`里的实现与正常情况相反，只要state不为0，就会返回-1。将当前的线程阻塞。直到其他线程将state降为0。
 
 ### `countDown`:
 

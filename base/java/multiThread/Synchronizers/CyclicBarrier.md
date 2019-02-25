@@ -70,6 +70,8 @@ CyclicBarrier使用全部或全部破坏模型进行失败的同步尝试：如�
 
 ### 分析
 
+栅栏循环的实现原理与AQS无关
+
 ```java
 /**
  * 屏障的每次使用都表示为生成实例。
@@ -175,7 +177,7 @@ private int dowait(boolean timed, long nanos)
 }
 ```
 
-doWait方法比较长，但是比较好理解，首先通过ReentrantLock获取当前线程的锁，然后进入到了try/catch代码块中。在代码块里面获取次循环相关的Generation对象g，如果g被break就抛出`BrokenBarrierException`。然后判断当前线程是否被中断过，是的话调用`breakBarrier`并抛出异常。
+doWait方法比较长，但是比较好理解，首先通过ReentrantLock获取当前线程的锁，然后进入到了try/catch代码块中。在代码块里面获取与循环相关的Generation对象g，如果g被break就抛出`BrokenBarrierException`。然后判断当前线程是否被中断过，是的话调用`breakBarrier`并抛出异常。
 
 ```java
 private void breakBarrier() {
@@ -233,3 +235,6 @@ public void reset() {
 
 `reset`用于将当前栅栏循环重置，但是会让等待的线程抛出异常，所以应该谨慎使用。
 
+## 总结
+
+栅栏循环使用计数器和重入锁的condition 控制线程，当到完成目标的线程数量足够的时候 condition就会唤醒其他线程，并开始下一轮循环。
