@@ -151,10 +151,6 @@ Spring的bean定义读者希望能够在这个接口的实现上工作。 Spring
 
 BeanDefinitionRegistry接口的简单实现。 仅提供注册表功能，内置无工厂功能。例如，可用于测试bean定义读取器。
 
-
-
-
-
 核心的获取Bean 的方法是 `doGetBean()`下面来分析这个方法。:
 
 ```java

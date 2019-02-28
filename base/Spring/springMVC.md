@@ -19,8 +19,6 @@ ServletContext getServletContext();
 
 ### ConfigurableWebApplicationContext
 
-
-
 ```java
 public interface ConfigurableWebApplicationContext extends WebApplicationContext, ConfigurableApplicationContext {
 ```
