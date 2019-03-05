@@ -921,4 +921,5 @@ get操作是幂等性操作，不会改变table结构，并且得益于TreeNode�
 |                由于不考虑多线程，没有特殊节点                | 由于是并发容器，有三个特殊的节点（hash值为负值）TreeBin，ForwardingNode和ReservationNode，帮助线程解决并发问题。 |
 | 为单线程设计，扩容逻辑没有ConcurrentHashMap复杂，单线程情况下性能也更好。 | 在扩容的时候，不进逻辑比HashMap更加复杂，并且还会保守的在transfer过后重进检查以确定是否全不transfer完毕。只在单线程的情况下，性能比HashMap相差较大，但是可以有其他线程帮助transfer。 |
 |                    TreeNode直接作为根节点                    | 在链表点转换成树的时候需要有一个TreeBin节点作为索引上的节点，进行同步控制而不是TreeNode直接作为根节点 |
+|                    扩容的过程为 transfer                     |                     扩容的过程为 resize                      |
 
