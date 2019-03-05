@@ -188,7 +188,7 @@ public HashMap(int initialCapacity, float loadFactor) {
 }
 ```
 
-```
+```java
 //返回与给定值最接近的数字。这个数字为2的整数次幂。
 static final int tableSizeFor(int cap) {
     int n = -1 >>> Integer.numberOfLeadingZeros(cap - 1);
@@ -196,7 +196,7 @@ static final int tableSizeFor(int cap) {
 }
 ```
 
-```
+```java
 //指定int值的二进制补码二进制表示中最高位（“最左侧”）一位之前的零位数，如果该值等于零，则为32。
 public static int numberOfLeadingZeros(int i) {
     // HD, Count leading 0's
@@ -373,7 +373,7 @@ for (int j = 0; j < oldCap; ++j) {
 1. 只有一个节点,会被重新hash（e.hash & (newCap - 1)）,新位置有两种情况，hash到原位置，2次幂的偏移量hash到新的位置。
 
 2. 链表：当索引位置是链表的时候。分为三种情况：
-   1. 元素在旧数组上hash后的索引位置为0，这种情况出现于 `（key.hashCode=oldCap）*n+n & oldCap`这种情况，会被重新分配在新数组相对于旧数组相同的位置上。
+   1. 元素在与 oldCapacity 进行 hash后的索引位置为0，这种情况出现于 `（key.hashCode=oldCap）*n+n & oldCap`这种情况，会被重新分配在新数组相对于旧数组相同的位置上。
    2. 元素在旧数组上索引位置不为0，会被重新分配在旧数组位置+oldCap的新位置。
       1. 原来在hash在0索引位置的Node的key值，被修改后重新hash不在0索引位置，和原来hash不在0索引位置的Node重新hash后在0索引位置。
 

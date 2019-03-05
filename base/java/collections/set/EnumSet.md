@@ -14,7 +14,9 @@ public abstract class EnumSet<E extends Enum<E>> extends AbstractSet<E>
 与大多数集合实现一样，EnumSet不同步。如果多个线程同时访问枚举集，并且至少有一个线程修改了该集，则应该在外部进行同步。这通常通过在自然封装枚举集的某个对象上同步来完成。如果不存在此类对象，则应使用Collections.synchronizedSet（java.util.Set <T>）方法“包装”该集合。这最好在创建时完成，以防止意外的不同步访问：
 设置
 
-    <MyEnum> s = Collections.synchronizedSet（EnumSet.noneOf（MyEnum.class））;
+```java
+<MyEnum> s = Collections.synchronizedSet（EnumSet.noneOf（MyEnum.class））;
+```
 
 实施说明：所有基本操作都在恒定时间内执行。它们很可能（虽然不能保证）比它们的HashSet对应物快得多。如果它们的参数也是枚举集，即使批量操作也会在恒定时间内执行。
 

@@ -26,13 +26,15 @@ LinkedList没有实现RandomAccess,所以它的不能以恒定时间获取元素
 
 ### 字段 ###
 
-    transient int size = 0;
+```java
+transient int size = 0;
 
-    //第一个Node
-    transient Node<E> first;
+//第一个Node
+transient Node<E> first;
 
-    //最后一个Node
-    transient Node<E> last;
+//最后一个Node
+transient Node<E> last;
+```
 
 
 LinkedList的字段比较简单，只有三个。
@@ -41,30 +43,34 @@ LinkedList的字段比较简单，只有三个。
 
 由于LinkedList是通过链表实现的，增加元素的时候就是在当前链表最后面新加一个节点。并不会涉及到扩容的问题。
 
-        private static class Node<E> {
-            E item;
-            Node<E> next;
-            Node<E> prev;
+```java
+    private static class Node<E> {
+        E item;
+        Node<E> next;
+        Node<E> prev;
 
-            Node(Node<E> prev, E element, Node<E> next) {
-                this.item = element;
-                this.next = next;
-                this.prev = prev;
-            }
+        Node(Node<E> prev, E element, Node<E> next) {
+            this.item = element;
+            this.next = next;
+            this.prev = prev;
         }
-
-
-    void linkLast(E e) {
-        final Node<E> l = last;
-        final Node<E> newNode = new Node<>(l, e, null);
-        last = newNode;
-        if (l == null)
-            first = newNode;
-        else
-            l.next = newNode;
-        size++;
-        modCount++;
     }
+```
+
+
+```java
+void linkLast(E e) {
+    final Node<E> l = last;
+    final Node<E> newNode = new Node<>(l, e, null);
+    last = newNode;
+    if (l == null)
+        first = newNode;
+    else
+        l.next = newNode;
+    size++;
+    modCount++;
+}
+```
 
 第一个方法是节点的实现，有保存前一个和后一个的节点，后一个是`add()`方法的具体实现，可以看到行为就是新建一个节点放在最后面 ，并将新节点赋值给last。
 
@@ -89,5 +95,5 @@ LinedList的迭代器，迭代器有两个，一个是 正序迭代器，一个�
 >>遍历LindedList用迭代器速度较快<p>
 >>ArrayList继承自AbstractList一个实现了RandomAccess的抽象类，代表可以以恒定的时间获取到元素，遍历它用for循环较快
 >
->>LinkdeList实现了基于队列行为的方法，可以直接通过其创建一个链表队列<p>
+>>LinkdeList实现了基于双端队列行为的方法，可以直接通过其创建一个链表队列<p>
 >>ArrayList不能用于创建别的数据结构

@@ -86,6 +86,10 @@ Set接口的哈希表和链表实现，具有可预测的迭代顺序。 此实�
 ### 构造方法 ###
 
 ```java
+public class LinkedHashSet<E>
+    extends HashSet<E>
+    implements Set<E>, Cloneable, java.io.Serializable {
+    
 public LinkedHashSet(int initialCapacity, float loadFactor) {
         super(initialCapacity, loadFactor, true);
     }
@@ -104,5 +108,13 @@ public LinkedHashSet(Collection<? extends E> c) {
 }
 ```
 
-LinkedHashSet直接继承了HashSet，可以看出他默认的容量是16，如果通过其他集合构造的话，最小是11和二倍数组容量的最大值。加载因子都是0.75。
+
+
+```java
+HashSet(int initialCapacity, float loadFactor, boolean dummy) {
+    map = new LinkedHashMap<>(initialCapacity, loadFactor);
+}
+```
+
+LinkedHashSet直接继承了HashSet，通过HashSet 的构造方法通过 LinkedHashMap 创建内部容器。可以看出他默认的容量是16，如果通过其他集合构造的话，最小是11和二倍数组容量的最大值。加载因子都是0.75。
 
