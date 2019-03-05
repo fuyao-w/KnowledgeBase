@@ -221,7 +221,7 @@ protected ConfigurableApplicationContext createApplicationContext() {
                ex);
       }
    }
-   return (ConfigurableApplicationContext) BeanUtils.instantiate(contextClass);
+   return (ConfigurableApplicationContext) 			BeanUtils.instantiate(contextClass);
 }
 ```
 
