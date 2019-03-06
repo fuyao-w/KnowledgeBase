@@ -70,6 +70,14 @@ IdentityHashMap的初始容量为32，默认最小期望值为4。NULL_KEY帮住
 ## 分析 
 
 ```java
+public IdentityHashMap() {
+    init(DEFAULT_CAPACITY);
+}
+```
+
+无参构造方法将 默认值扩大二倍，也就是 64。
+
+```java
 public IdentityHashMap(int expectedMaxSize) {
     if (expectedMaxSize < 0)
         throw new IllegalArgumentException("expectedMaxSize is negative: "
@@ -130,6 +138,8 @@ public V put(K key, V value) {
 }
 ```
 
+从 put 方法可以看出，key 和 value 全部存储在数组上，而且相邻
+
 ```java
 private boolean resize(int newCapacity) {
     int newLength = newCapacity * 2;
@@ -163,7 +173,7 @@ private boolean resize(int newCapacity) {
 }
 ```
 
-IdentityHashMap只用数组存储元素。所以扩容阈值较小。put方法的扩容判断是`s + (s << 1) > len`这句话，如果元素数量达到容量的三分之一就要进行扩容操作，新数组长度是旧数组长度的二倍。`retryAfterResize`是java里的`goto`在扩容完成前进行自旋。
+IdentityHashMap 只用数组存储元素。所以扩容阈值较小。put方法的扩容判断是`s + (s << 1) > len`这句话，如果元素数量达到容量的三分之二就要进行扩容操作，新数组长度是旧数组长度的二倍。`retryAfterResize`是java里的`goto`在扩容完成前进行自旋。
 
 ```java
 private static int nextKeyIndex(int i, int len) {
@@ -173,12 +183,10 @@ private static int nextKeyIndex(int i, int len) {
 
 在插入元素时每次跳跃2个索引位置。
 
-
-
 判断key相等的时候直接用 `==`判断。如果希望获取到字段值全部相等的两个对象的时候， 就可以使用此类。以为该类只判断地址是否相等。
 
 
 
 ### 总结
 
-IdentityHashMap比较特殊，通过`hash`和`==`来获取key。所有元素只存储在数组中，没有HashMap中bucket的概念。并且构造方法里面的期望值参数，也不是数组的初始值。而是扩大的四倍的2次幂数。
+IdentityHashMap比较特殊，通过`hash`确定位置，`==`来获取key。所有元素只存储在数组中，没有HashMap中bucket的概念。并且构造方法里面的期望值参数，也不是数组的初始值。而是扩大的四倍的2次幂数。

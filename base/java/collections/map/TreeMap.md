@@ -57,7 +57,7 @@ public TreeMap(SortedMap<K, ? extends V> m) {
 }
 ```
 
-TreeMap是排序Map（不是有序，它的本质是红黑树，也就是二叉查找树，插入顺序一定等于遍历顺序。），TreeSet也是对TreeSet的封装。实现了导航Map,可以`floor`,`ceil`等方法获取最接近的元素。
+TreeMap是排序Map（不是有序，它的本质是红黑树，也就是二叉查找树，插入顺序一定等于遍历顺序。），TreeSet也是对TreeMap的封装。实现了导航Map,可以`floor`,`ceil`等方法获取最接近的元素。
 
 构造一个TreeMap可以传递进来一个`Comparator`接口。也可以通过另外一个TreeMap，或者其他map构造（需要自己实现）。或者什么也不传，通过让实现`comparable接口的`元素调用`compareTo`进行比较。
 
@@ -188,3 +188,4 @@ private void deleteEntry(Entry<K,V> p) {
 ### 总结
 
 TreeMap需要了解的是，如果元素没有实现`Comparable`接口，需要传递`Comparator`实现`compare`方法。还需要了解的就是红黑树的结构。至少了解红黑树的性质，和左右旋转。都是比较简单的。
+

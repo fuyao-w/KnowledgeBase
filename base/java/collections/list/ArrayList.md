@@ -6,13 +6,13 @@ public class ArrayList<E> extends AbstractList<E> implements List<E>, RandomAcce
 
 ### java doc ###
 实现了List接口的可调整大小的基于数组的实现。实现所有可选列表操作，并允许所有元素，**包括null**。除了实现List接口之外，此类还提供了一些方法来操作内部用于存储列表的数组的大小。 （这个类大致相当于Vector，除了它是不同步的。）
-size，isEmpty，get，set，iterator和listIterator操作以恒定时间运行。添加操作以分摊的常量时间运行，即添加n个元素需要O（n）时间。
+size，isEmpty，get，set，iterator 和 listIterator 操作以恒定时间运行。添加操作以分摊的常量时间运行，即添加n个元素需要O（n）时间。
 所有其他操作都以线性时间运行（粗略地说）。与LinkedList实现相比，常数因子较低。
 
 每个ArrayList实例都有一个容量。容量是用于存储列表中元素的数组的大小。它始终**至少**与列表大小一样大。随着元素添加到ArrayList，其容量会自动增加。
 除了添加元素具有恒定的摊销时间成本这一事实之外，未指定增长策略的详细信息。
 
-在使用ensureCapacity操作添加大量元素之前，应用程序可以增加ArrayList实例的容量。这可能会减少增量重新分配的数量。
+在使用`ensureCapacity`操作添加大量元素之前，应用程序可以增加ArrayList实例的容量。这可能会减少增量重新分配的数量。
 
 **请注意，此实现不同步**。如果多个线程同时访问ArrayList实例，并且至少有一个线程在结构上修改了列表，则必须在外部进行同步。
 （结构上的修改是指添加或删除一个或多个元素，或明确地调整列表大小的操作;仅设置元素的值不是结构修改。）这是一个典型地通过在同步一些对象自然封装该完成名单。
@@ -28,7 +28,7 @@ List list = Collections.synchronizedList（new ArrayList（...））;
 
 **请注意，迭代器的快速失败行为无法得到保证，因为一般来说，在存在不同步的并发修改时，不可能做出任何硬性保证。**
 失败快速迭代器会尽最大努力抛出ConcurrentModificationException。因此，编写依赖于此异常的程序以确保其正确性是错误的：
-迭代器的快速失败行为应该仅用于检测错误。（java doc）
+迭代器的快速失败行为应该仅用于检测错误。
 
 
 ### 行为分析 ###
@@ -163,6 +163,8 @@ private int newCapacity(int minCapacity) {
 
 剩下的方法，原理跟`add()`大同小异。下面通过观察迭代器来研究modCount的行为：
 
+首先说明，在迭代器外，只有设计修改 list 结构的方法 例如`add`、`remove` 才会修改 modCount 的值。
+
 ```java
  private class Itr implements Iterator<E> {
         int cursor;       // index of next element to return
@@ -199,9 +201,9 @@ final void checkForComodification() {
     }
 ```
 
-这是next()的首先执行的方法，就是判断modCount与expectedModCount是否相等。那么什么情况下会不相等呢,还记得`add()`方法吗，
+这是next()的首先执行的方法，就是判断modCount与expectedModCount是否相等。那么什么情况下会不相等呢,还记得`add()`方法吗？它修改了ArrayList 的结构，
 它首先会将modCount+1，在其他的方法里也一样，改变了elementData里的元素多少次modCount就加几次。但是除了迭代器之外的方法里都没有执行这个check 方法。
-也就是说它的第一个功能就是记录修改数组元素的操作次数。但是并不会出现modCount与expectedModCount不相等的情况，只有在使用迭代器里会发生不相等的情况了。
+如果我们在使用迭代器的同时，调用 add ,remove 方法修改list 的结构的话，就会抛出`ConcurrentModificationException`  异常。
 
 ```java
 public void test() {
@@ -222,8 +224,26 @@ public void test() {
 
 运行这个方法，会抛出`java.util.ConcurrentModificationException`，说明modCount与expectedModCount不相等了，
 它是怎么造成的呢？在迭代器被实例化时，expectedModCount值就已经固定了。
-这时候`add()`方法缺改变了modCount的值，造成了与 expectedModCount 不相等，所以程序fast-fail，抛出异常。现在看**在for遍历与迭代器一起使用的时候，程序会fast-fail**。
+这时候`add()`方法缺改变了modCount的值，造成了与 expectedModCount 不相等。
 
+```java
+public void remove() {
+    if (lastRet < 0)
+        throw new IllegalStateException();
+    checkForComodification();
+
+    try {
+        ArrayList.this.remove(lastRet);
+        cursor = lastRet;
+        lastRet = -1;
+        expectedModCount = modCount;
+    } catch (IndexOutOfBoundsException ex) {
+        throw new ConcurrentModificationException();
+    }
+}
+```
+
+对于迭代器的 remove 方法，会调用外部 remove，来删除元素，但是会将新的 modeCount 重新赋值给 excetedModCount。所以程序fast-fail，抛出异常。现在看**在通过迭代器以外修改list 的结构的时候，程序会fast-fail**。
 
 下面再看一下另一个例子：
 
@@ -256,17 +276,19 @@ public void test() {
 最后看一次下这个类实现的一些其他接口里有什么需要注意的：`List`, `RandomAccess`,`Cloneable`,`Serializable`
 前两个之前都介绍过了，后面的 [`Cloneable`] [clonable]代表着这个List可以实现克隆的功能，看一下他是怎么实现的：
 
-        public Object clone() {
-            try {
-                ArrayList<?> v = (ArrayList<?>) super.clone();
-                v.elementData = Arrays.copyOf(elementData, size);
-                v.modCount = 0;
-                return v;
-            } catch (CloneNotSupportedException e) {
-                // this shouldn't happen, since we are Cloneable
-                throw new InternalError(e);
-            }
+```java
+    public Object clone() {
+        try {
+            ArrayList<?> v = (ArrayList<?>) super.clone();
+            v.elementData = Arrays.copyOf(elementData, size);
+            v.modCount = 0;
+            return v;
+        } catch (CloneNotSupportedException e) {
+            // this shouldn't happen, since we are Cloneable
+            throw new InternalError(e);
         }
+    }
+```
 
 它的实现就是克隆ArrayList，再将elementData复制一份过去。所以你克隆后的只相当于新创建了一个List
 对象，但是如果List里面的元素不是基本类型而是对象的话，那么你就需要注意了，现在这两个List里面的对象
@@ -275,24 +297,26 @@ public void test() {
 它还实现了序列化接口:
 
 
-      private void writeObject(java.io.ObjectOutputStream s)
-            throws java.io.IOException {
-            // Write out element count, and any hidden stuff
-            int expectedModCount = modCount;
-            s.defaultWriteObject();
-    
-            // Write out size as capacity for behavioral compatibility with clone()
-            s.writeInt(size);
-    
-            // Write out all elements in the proper order.
-            for (int i=0; i<size; i++) {
-                s.writeObject(elementData[i]);
-            }
-    
-            if (modCount != expectedModCount) {
-                throw new ConcurrentModificationException();
-            }
+```java
+  private void writeObject(java.io.ObjectOutputStream s)
+        throws java.io.IOException {
+        // Write out element count, and any hidden stuff
+        int expectedModCount = modCount;
+        s.defaultWriteObject();
+
+        // Write out size as capacity for behavioral compatibility with clone()
+        s.writeInt(size);
+
+        // Write out all elements in the proper order.
+        for (int i=0; i<size; i++) {
+            s.writeObject(elementData[i]);
         }
+
+        if (modCount != expectedModCount) {
+            throw new ConcurrentModificationException();
+        }
+    }
+```
 
 这是ArrayList的序列化方法，是一个私有方法，ObjectOutputStream会通过反射调用这个类的writeObject方法进行序列化，ObjectInputStream会调用相应的readObject方法进行反序列化。
 可以看到，这个方法通过modCount保证线程安全。而且ArrayList的序列化只是所保存元素的序列化。因为List只是一个存储数据的容器，把它序列化并无任何意义。
@@ -344,7 +368,9 @@ public void test() {
 
 这段程序会抛出异常，是什么异常？空指针异常吗？
 
-    java.lang.IndexOutOfBoundsException: Index 1000 out of bounds for length 1000
+```java
+java.lang.IndexOutOfBoundsException: Index 1000 out of bounds for length 1000
+```
 
 它会抛出数组越界异常，来分析一下。首先创建了一个ArrayList并且为`add()`进去1000个数，下面的for循环是重点。
 它的递增条件是 list调用iterator()方法,返回的迭代器对象再调用'hasNext()'

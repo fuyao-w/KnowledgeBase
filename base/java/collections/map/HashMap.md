@@ -80,7 +80,7 @@ static class Node<K,V> implements Map.Entry<K,V> {
 
 
 
-```
+```java
 /**
  * 默认初始容量 - 必须是2的幂。
  */
@@ -169,7 +169,7 @@ final float loadFactor;
 
 ### 分析 ###
 
-通过HashMap里的字段和内部类`Node`可以分析出，HashMap是一个Node数组+单向链表+树组成的结构。其中Node代表链表的的一个节点。几个常量DEFAULT_INITIAL_CAPACITY代表HashMap的默认数组长度16，DEFAULT_LOAD_FACTOR是加载因子，加载因子*数组长度代表HashMap扩容的阈值。MIN_TREEIFY_CAPACITY是HashMap里数组里链表转化成树的最小数组长度64。TREEIFY_THRESHOLD是在数组长度大于64后数组索引上的链表可以转化成树的最小链表长度。TREEIFY_THRESHOLD  当索引上的树重新转换成链表的最小元素数量。MAXIMUM_CAPACITY是数组最大长度。
+通过HashMap里的字段和内部类`Node`可以分析出，HashMap是一个Node数组+单向链表+树组成的结构。其中Node代表链表的的一个节点。几个常量DEFAULT_INITIAL_CAPACITY代表HashMap的默认数组长度16，DEFAULT_LOAD_FACTOR是加载因子，加载因子 * 组长度代表HashMap扩容的阈值。MIN_TREEIFY_CAPACITY是HashMap里数组里链表转化成树的最小数组长度64。TREEIFY_THRESHOLD是在数组长度大于64后数组索引上的链表可以转化成树的最小链表长度。TREEIFY_THRESHOLD  当索引上的树重新转换成链表的最小元素数量。MAXIMUM_CAPACITY是数组最大长度。
 
 ### 构造方法
 
@@ -372,8 +372,8 @@ for (int j = 0; j < oldCap; ++j) {
 
 1. 只有一个节点,会被重新hash（e.hash & (newCap - 1)）,新位置有两种情况，hash到原位置，2次幂的偏移量hash到新的位置。
 
-2. 链表：当索引位置是链表的时候。分为三种情况：
-   1. 元素在与 oldCapacity 进行 hash后的索引位置为0，这种情况出现于 `（key.hashCode=oldCap）*n+n & oldCap`这种情况，会被重新分配在新数组相对于旧数组相同的位置上。
+2. 链表：当索引位置是链表的时候。分为量种情况：
+   1. 元素在与 oldCapacity 进行 hash后的索引位置为0，这种情况出现于 `（key.hashCode=oldCap）* n（n >= 2） & oldCap`这种情况，会被重新分配在新数组相对于旧数组相同的位置上。
    2. 元素在旧数组上索引位置不为0，会被重新分配在旧数组位置+oldCap的新位置。
       1. 原来在hash在0索引位置的Node的key值，被修改后重新hash不在0索引位置，和原来hash不在0索引位置的Node重新hash后在0索引位置。
 
@@ -441,7 +441,8 @@ final Node<K,V> getNode(int hash, Object key) {
 
 ## 总结 ## 
 
-HashMap的实现逻辑较为简单，但是有一个问题需要考虑，**这里的jdk源码都是 `java11`的，结构较8又有了变化。在`java8`之前HashMap在transfer()函数将旧数组元素迁移到新数组的时候，链表的顺序会被颠倒。而HashMap是非线程安全的，在多线程的情况下可能会出现链表成环的现象，从`get`时造成死循环。11里面链表的顺序没有被改变，不会出现链表成环的操作**
+HashMap的实现逻辑较为简单，但是有一个问题需要考虑，**这里的jdk源码都是 `java11`的，结构较8又有了变化。在`java8`之前HashMap在transfer()函数（11 里删除了与resize 河滨）将旧数组元素迁移到新数组的时候，链表的顺序会被颠倒。而HashMap是非线程安全的，在多线程的情况下可能会出现链表成环的现象，从`get`时造成死循环。11里面链表的顺序没有被改变，不会出现链表成环的操作**
 还有一个问题，是为什么数组的容量必须为2的次幂呢？回顾`putVal()`在定位新元素位置是怎么做的，
 `(n- 1) & hash`它就相当于取模操作，但是当n为奇数的时候不能正确的获得与取模操作一样的结果。
 所以，要让数组的容量为2的次幂。最后留意一下现在插入链表的方式是尾部插入。
+

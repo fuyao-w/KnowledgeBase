@@ -250,3 +250,5 @@ private static <T> void siftDownComparable(int k, T x, Object[] es, int n) {
 
 优先级队列通过一个维护一个小顶堆，来实现优先级插入。初始容量11，扩容方式与ArrayDeque相同。
 不能以恒定时间随机获取元素，故没有实现RandomAccess接口。
+
+对于 PriorityQueue 的元素，需要实现 Comparable 接口的`comperTo` 方法。如果参数类型并没有实现 Comparable ，那么就需要向构造函数传入 Comparator 接口的 compare 方法。 

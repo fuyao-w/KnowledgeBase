@@ -113,6 +113,4 @@ public V get(Object key) {
 
 `get()`在验证key合法性之后直接在vals获取到value值。
 
-
-
-EnumMap的结构简单，官方文档也介绍性能甚至比HashMap更好。
+EnumMap的结构简单用于以枚举为 key 的情况，官方文档也介绍性能甚至比HashMap更好。

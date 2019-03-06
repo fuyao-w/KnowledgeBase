@@ -6,7 +6,7 @@ public class ArrayDeque<E> extends AbstractCollection<E> implements Deque<E>, Cl
 
 ### java doc ###
 
-Deque接口的可调整大小的数组实现。队列 deques没有容量限制;他们根据需要增长以支持使用。它们不是线程安全的;在没有外部同步的情况下，它们不支持多线程的并发访问。禁止使用空元素。当用作堆栈时，此类可能比Stack快，并且在用作队列时比LinkedList更快。
+Deque接口的可调整大小的数组实现。队列 deque 没有容量限制;他们根据需要增长以支持使用。它们不是线程安全的;在没有外部同步的情况下，它们不支持多线程的并发访问。禁止使用空元素。当用作堆栈时，此类可能比Stack快，并且在用作队列时比LinkedList更快。
 大多数ArrayDeque操作以分摊的常量时间运行。例外包括remove，removeFirstOccurrence，removeLastOccurrence，contains，iterator.remove（）和批量操作，所有这些都以线性时间运行。
 
 这个类的迭代器方法返回的迭代器是快速失败的：如果在创建迭代器之后的任何时候修改了deque，除了通过迭代器自己的remove方法之外，迭代器通常会抛出ConcurrentModificationException。因此，在并发修改的情况下，迭代器快速而干净地失败，而不是在未来的未确定时间冒任意，非确定性行为的风险。
