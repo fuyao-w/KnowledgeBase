@@ -1,0 +1,102 @@
+```java
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicReference;
+import java.util.concurrent.locks.Condition;
+import java.util.concurrent.locks.Lock;
+
+/**
+ * @author wangfy
+ * @Description CLH锁
+ * @date 2018/12/17
+ **/
+public abstract class CLHAbslock implements Lock {
+    AtomicReference<Node> tail;
+    ThreadLocal<Node> curNode;
+    ThreadLocal<Node> preNode;
+
+
+    public CLHAbslock() {
+        tail = new AtomicReference<Node>(new Node());
+        this.curNode = new ThreadLocal<Node>() {
+            @Override
+            protected Node initialValue() {
+                return new Node();
+            }
+        };
+        this.preNode = new ThreadLocal<>();
+
+    }
+
+    class Node {
+        volatile AtomicBoolean locked = new AtomicBoolean();
+    }
+
+    @Override
+    public abstract void lock();
+
+    @Override
+    public abstract void unlock();
+
+    @Override
+    public void lockInterruptibly() throws InterruptedException {
+
+    }
+
+    @Override
+    public boolean tryLock() {
+        return false;
+    }
+
+    @Override
+    public boolean tryLock(long time, TimeUnit unit) throws InterruptedException {
+        return false;
+    }
+
+
+    @Override
+    public Condition newCondition() {
+        return null;
+    }
+
+
+}
+
+```
+
+
+```java
+/**
+ * @author wangfy
+ * @Description TODO
+ * @date 2018/12/17
+ **/
+public class CLHLock extends CLHAbslock {
+    @Override
+    public void lock() {
+        Node node = curNode.get();
+        node.locked.set(true);
+        Node pre = tail.getAndSet(node);
+        preNode.set(pre);
+        //锁定
+        while (pre.locked.get()) ;
+
+    }
+
+    /**
+     * @return void
+     * @date 2018/12/17 21:30
+     * @Description 当前线程解锁后，当前线程前驱节点就不会再被引用。而当前线程所持有的节点会被后继和尾节点引用。
+     * 而在解锁后前驱节点和当前线程持有节点的状态是一样的，所以当前节点完全可以被前驱节点所替换，
+     * 当前节点将被JVM回收，也可以不这么做。
+     * @Param []
+     **/
+    @Override
+    public void unlock() {
+        Node node = curNode.get();
+        node.locked.set(false);
+        curNode.set(preNode.get());
+    }
+}
+
+```
