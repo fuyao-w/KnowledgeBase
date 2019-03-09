@@ -1,0 +1,103 @@
+```java
+
+/**
+ * @author wangfy
+ * @Description 生产者消费者
+ * @date 2018/11/27
+ **/
+
+public class c {
+
+    static int i = 0;
+
+    public static void main(String[] args) throws Exception {
+        Q q = new Q();
+        Producer poducer = new Producer("生产者", q);
+        Coumoster comsumer = new Coumoster("消费者", q);
+        poducer.t.join();
+        comsumer.t.join();
+        System.out.println("主线程结束");
+    }
+
+    static class Q {
+        Boolean condition = true;
+        int i = 0;
+
+        public synchronized void put() {
+            while (!condition) {
+                try {
+                    wait();
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+            }
+            i += 1;
+            System.out.println("生产：" + i);
+            notify();
+            condition = false;
+        }
+
+        public synchronized void get() {
+            while (condition) {
+                try {
+                    wait();
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+            }
+            i -= 1;
+            System.out.println("消费：" + i);
+            notify();
+            condition = true;
+        }
+    }
+
+    static class Producer implements Runnable {
+        String name;
+        Q q;
+        Thread t;
+
+        public Producer(String name, Q q) {
+            this.name = name;
+            this.q = q;
+            t = new Thread(this, name);
+            t.start();
+        }
+
+        @Override
+        public void run() {
+            while (true) {
+                q.put();
+            }
+
+        }
+
+
+    }
+
+
+    static class Coumoster implements Runnable {
+
+        String name;
+        Q q;
+        Thread t;
+
+        public Coumoster(String name, Q q) {
+            this.name = name;
+            this.q = q;
+            t = new Thread(this, name);
+            t.start();
+        }
+
+        @Override
+        public void run() {
+            while (true) {
+                q.get();
+            }
+
+        }
+
+    }
+}
+
+```
