@@ -1,0 +1,90 @@
+```java
+
+import java.util.Optional;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.Executor;
+import java.util.concurrent.LinkedBlockingDeque;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+
+
+/**
+ * @author wangfy
+ * @Description 单线程线程池
+ * @date 2018/12/14
+ **/
+public class SerialExecutor implements Executor {
+    private BlockingQueue<Worker> runnableQueue = new LinkedBlockingDeque<>();
+    private Worker mWorker = new Worker(null);
+    private Thread thread = new Thread(mWorker, "线程池");
+    private boolean flag = true;
+    private boolean shutDown = false;
+    private AtomicInteger nullRunnableCounter = new AtomicInteger();
+    private Logger logger = Logger.getLogger("自定义线程池");
+
+
+    @Override
+    public void execute(Runnable command) {
+        Optional.ofNullable(command).ifPresentOrElse(runnable -> {
+            if (flag) {
+                flag = false;
+                mWorker.realTask = command;
+                thread.start();
+            } else {
+                runnableQueue.offer(new Worker(command));
+            }
+        }, () -> logger.log(Level.WARNING, "有" + nullRunnableCounter.incrementAndGet() + "个空任务被提交到线程池"));
+    }
+
+    /**
+     * @return void
+     * @date 2018/12/16 16:17
+     * @Description 线程执行方法
+     * @Param [worker]
+     **/
+    private void runWorker(Worker worker) {
+        while (worker != null || (worker = getTask()) != null) {
+            worker.realTask.run();
+            worker = null;
+        }
+    }
+
+    private Worker getTask() {
+        for (; isWork(); ) {
+            try {
+                return runnableQueue.take();
+            } catch (InterruptedException e) {
+                logger.log(Level.WARNING, "任务队列被中断,终止线程执行");
+                shutDown();
+            }
+        }
+        return null;
+    }
+
+    private class Worker implements Runnable {
+        Runnable realTask;
+
+        public Worker(Runnable realTask) {
+            this.realTask = realTask;
+        }
+
+        @Override
+        public void run() {
+            runWorker(this);
+        }
+
+    }
+
+    public boolean isWork() {
+        return shutDown == false;
+    }
+
+    public void shutDown() {
+        shutDown = true;
+    }
+
+}
+
+```
