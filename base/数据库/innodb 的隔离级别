@@ -1,0 +1,132 @@
+#### 15.7.2.1事务隔离级别
+
+
+
+
+
+事务隔离是数据库处理的基础之一。隔离是I的首字母缩写 [ACID](https://dev.mysql.com/doc/refman/8.0/en/glossary.html#glos_acid) ; 隔离级别是在多个事务进行更改并同时执行查询时，对结果的性能和可靠性，一致性和可重现性进行微调的设置。
+
+`InnoDB`提供由SQL描述的所有四个事务隔离级别：1992标准： [`READ UNCOMMITTED`](https://dev.mysql.com/doc/refman/8.0/en/innodb-transaction-isolation-levels.html#isolevel_read-uncommitted)， [`READ COMMITTED`](https://dev.mysql.com/doc/refman/8.0/en/innodb-transaction-isolation-levels.html#isolevel_read-committed)， [`REPEATABLE READ`](https://dev.mysql.com/doc/refman/8.0/en/innodb-transaction-isolation-levels.html#isolevel_repeatable-read)，和 [`SERIALIZABLE`](https://dev.mysql.com/doc/refman/8.0/en/innodb-transaction-isolation-levels.html#isolevel_serializable)。`InnoDB`is 的默认隔离级别[`REPEATABLE READ`](https://dev.mysql.com/doc/refman/8.0/en/innodb-transaction-isolation-levels.html#isolevel_repeatable-read)。
+
+用户可以更改单个会话或与[`SET TRANSACTION`](https://dev.mysql.com/doc/refman/8.0/en/set-transaction.html)语句的所有后续连接的隔离级别。要为所有连接设置服务器的默认隔离级别，请使用 [`--transaction-isolation`](https://dev.mysql.com/doc/refman/8.0/en/server-options.html#option_mysqld_transaction-isolation)命令行或选项文件中的选项。有关隔离级别和级别设置语法的详细信息，请参见 [第13.3.7节“SET TRANSACTION语法”](https://dev.mysql.com/doc/refman/8.0/en/set-transaction.html)。
+
+`InnoDB`使用不同的[锁定](https://dev.mysql.com/doc/refman/8.0/en/glossary.html#glos_locking)策略支持此处描述的每个事务隔离级别 。[`REPEATABLE READ`](https://dev.mysql.com/doc/refman/8.0/en/innodb-transaction-isolation-levels.html#isolevel_repeatable-read)对于[ACID](https://dev.mysql.com/doc/refman/8.0/en/glossary.html#glos_acid)合规性很重要的关键数据的操作，您可以强制执行与默认级别的高度 一致性 。或者你可以用放松的一致性规则 [`READ COMMITTED`](https://dev.mysql.com/doc/refman/8.0/en/innodb-transaction-isolation-levels.html#isolevel_read-committed)，甚至 [`READ UNCOMMITTED`](https://dev.mysql.com/doc/refman/8.0/en/innodb-transaction-isolation-levels.html#isolevel_read-uncommitted)在情况下，如散装报告需要精确的一致性和可重复的结果比最小化锁定开销的量更重要。 [`SERIALIZABLE`](https://dev.mysql.com/doc/refman/8.0/en/innodb-transaction-isolation-levels.html#isolevel_serializable)执行甚至更严格的规则[`REPEATABLE READ`](https://dev.mysql.com/doc/refman/8.0/en/innodb-transaction-isolation-levels.html#isolevel_repeatable-read)，主要用于特殊情况，例如[XA](https://dev.mysql.com/doc/refman/8.0/en/glossary.html#glos_xa)事务和解决并发和[死锁](https://dev.mysql.com/doc/refman/8.0/en/glossary.html#glos_deadlock)问题 。
+
+以下列表描述了MySQL如何支持不同的事务级别。该列表从最常用的级别变为最少使用的级别。
+
+- `REPEATABLE READ`
+
+  这是默认的隔离级别 `InnoDB`。 同一事务中的[一致读取读取](https://dev.mysql.com/doc/refman/8.0/en/glossary.html#glos_consistent_read)第一次读取建立的 [快照](https://dev.mysql.com/doc/refman/8.0/en/glossary.html#glos_snapshot)。这意味着如果[`SELECT`](https://dev.mysql.com/doc/refman/8.0/en/select.html) 在同一事务中发出多个普通（非锁定）语句，这些 [`SELECT`](https://dev.mysql.com/doc/refman/8.0/en/select.html)语句也相互一致。请参见 [第15.7.2.3节“一致的非锁定读取”](https://dev.mysql.com/doc/refman/8.0/en/innodb-consistent-read.html)。
+
+  对于[锁定读取](https://dev.mysql.com/doc/refman/8.0/en/glossary.html#glos_locking_read) （[`SELECT`](https://dev.mysql.com/doc/refman/8.0/en/select.html)带`FOR UPDATE`或，`FOR SHARE`） [`UPDATE`](https://dev.mysql.com/doc/refman/8.0/en/update.html)和 [`DELETE`](https://dev.mysql.com/doc/refman/8.0/en/delete.html)语句，锁定取决于语句是使用具有唯一搜索条件的唯一索引还是范围类型搜索条件。
+
+  - 对于具有唯一搜索条件的唯一索引， `InnoDB`仅锁定找到的索引记录，而不是 之前的[间隙](https://dev.mysql.com/doc/refman/8.0/en/glossary.html#glos_gap)。
+  - 对于其他搜索条件，`InnoDB` 使用[间隙锁](https://dev.mysql.com/doc/refman/8.0/en/glossary.html#glos_gap_lock)或 [下一键锁定锁定](https://dev.mysql.com/doc/refman/8.0/en/glossary.html#glos_next_key_lock)扫描的索引范围， 以阻止其他会话插入范围所覆盖的间隙。有关间隙锁和下一键锁的信息，请参见 [第15.7.1节“InnoDB锁定”](https://dev.mysql.com/doc/refman/8.0/en/innodb-locking.html)。
+
+- `READ COMMITTED`
+
+  即使在同一事务中，每个一致的读取也会设置和读取自己的新快照。有关一致性读取的信息，请参见 [第15.7.2.3节“一致性非锁定读取”](https://dev.mysql.com/doc/refman/8.0/en/innodb-consistent-read.html)。
+
+  对于锁定读取（[`SELECT`](https://dev.mysql.com/doc/refman/8.0/en/select.html) 带`FOR UPDATE`或`FOR SHARE`），[`UPDATE`](https://dev.mysql.com/doc/refman/8.0/en/update.html) 语句和[`DELETE`](https://dev.mysql.com/doc/refman/8.0/en/delete.html) 语句，`InnoDB`只锁定索引记录，而不是它们之前的间隙，因此允许在锁定记录旁边自由插入新记录。间隙锁定仅用于外键约束检查和重复键检查。
+
+  由于禁用了间隙锁定，因此可能会出现幻像问题，因为其他会话可以在间隙中插入新行。有关[幻像的](https://dev.mysql.com/doc/refman/8.0/en/innodb-next-key-locking.html)信息，请参见 [第15.7.4节“幻影行”](https://dev.mysql.com/doc/refman/8.0/en/innodb-next-key-locking.html)。
+
+  `READ COMMITTED`隔离级别 仅支持基于行的二进制日志记录 。如果使用`READ COMMITTED`带 [`binlog_format=MIXED`](https://dev.mysql.com/doc/refman/8.0/en/replication-options-binary-log.html#sysvar_binlog_format)时，服务器将自动使用基于行的日志记录。
+
+  使用`READ COMMITTED`还有其他效果：
+
+  - 对于[`UPDATE`](https://dev.mysql.com/doc/refman/8.0/en/update.html)或 [`DELETE`](https://dev.mysql.com/doc/refman/8.0/en/delete.html)语句， `InnoDB`仅对其更新或删除的行保持锁定。在MySQL评估`WHERE`条件后，将释放非匹配行的记录锁 。这大大降低了死锁的可能性，但它们仍然可以发生。
+  - 对于[`UPDATE`](https://dev.mysql.com/doc/refman/8.0/en/update.html)语句，如果一行已被锁定，则`InnoDB` 执行“ 半一致 ”读取，将最新提交的版本返回给MySQL，以便MySQL可以确定该行是否与该`WHERE`条件 匹配 [`UPDATE`](https://dev.mysql.com/doc/refman/8.0/en/update.html)。如果行匹配（必须更新），MySQL再次读取该行，这次`InnoDB`要么锁定它，要么等待锁定它。
+
+  请考虑以下示例，从此表开始：
+
+  ```sql
+  CREATE TABLE t (a INT NOT NULL, b INT) ENGINE = InnoDB;
+  INSERT INTO t VALUES (1,2),(2,3),(3,2),(4,3),(5,2);
+  COMMIT;
+  ```
+
+  在这种情况下，表没有索引，因此搜索和索引扫描使用隐藏的聚簇索引进行记录锁定（请参见[第15.6.2.1节“聚簇和二级索引”](https://dev.mysql.com/doc/refman/8.0/en/innodb-index-types.html)）而不是索引列。
+
+  假设一个会话[`UPDATE`](https://dev.mysql.com/doc/refman/8.0/en/update.html)使用以下语句执行 ：
+
+  ```sql
+  # Session A
+  START TRANSACTION;
+  UPDATE t SET b = 5 WHERE b = 3;
+  ```
+
+  还假设第二个会话 [`UPDATE`](https://dev.mysql.com/doc/refman/8.0/en/update.html)通过执行第一个会话的那些语句来执行：
+
+  ```sql
+  # Session B
+  UPDATE t SET b = 4 WHERE b = 2;
+  ```
+
+  当[`InnoDB`](https://dev.mysql.com/doc/refman/8.0/en/innodb-storage-engine.html)执行每个时 [`UPDATE`](https://dev.mysql.com/doc/refman/8.0/en/update.html)，它首先获取每行的独占锁，然后确定是否修改它。如果[`InnoDB`](https://dev.mysql.com/doc/refman/8.0/en/innodb-storage-engine.html)不修改行，则释放锁。否则， [`InnoDB`](https://dev.mysql.com/doc/refman/8.0/en/innodb-storage-engine.html)保留锁直到事务结束。这会影响事务处理，如下所示。
+
+  使用默认`REPEATABLE READ` 隔离级别时，第 [`UPDATE`](https://dev.mysql.com/doc/refman/8.0/en/update.html)一个在它读取的每一行上获取一个x锁定，并且不释放它们中的任何一个：
+
+  ```none
+  x-lock(1,2); retain x-lock
+  x-lock(2,3); update(2,3) to (2,5); retain x-lock
+  x-lock(3,2); retain x-lock
+  x-lock(4,3); update(4,3) to (4,5); retain x-lock
+  x-lock(5,2); retain x-lock
+  ```
+
+  第二个[`UPDATE`](https://dev.mysql.com/doc/refman/8.0/en/update.html)块一旦尝试获取任何锁（因为第一次更新已保留所有行上的锁），并且在第一次[`UPDATE`](https://dev.mysql.com/doc/refman/8.0/en/update.html)提交或回滚之前不会继续：
+
+  ```none
+  x-lock(1,2); block and wait for first UPDATE to commit or roll back
+  ```
+
+  如果`READ COMMITTED`使用if ，则第[`UPDATE`](https://dev.mysql.com/doc/refman/8.0/en/update.html)一个在它读取的每一行上获取一个x-lock，并释放那些不修改的行：
+
+  ```none
+  x-lock(1,2); unlock(1,2)
+  x-lock(2,3); update(2,3) to (2,5); retain x-lock
+  x-lock(3,2); unlock(3,2)
+  x-lock(4,3); update(4,3) to (4,5); retain x-lock
+  x-lock(5,2); unlock(5,2)
+  ```
+
+  对于第二个`UPDATE`， `InnoDB`执行 “ 半一致 ”读取，返回它读取到MySQL的每一行的最新提交版本，以便MySQL可以确定该行是否符合以下 `WHERE`条件 [`UPDATE`](https://dev.mysql.com/doc/refman/8.0/en/update.html)：
+
+  ```none
+  x-lock(1,2); update(1,2) to (1,4); retain x-lock
+  x-lock(2,3); unlock(2,3)
+  x-lock(3,2); update(3,2) to (3,4); retain x-lock
+  x-lock(4,3); unlock(4,3)
+  x-lock(5,2); update(5,2) to (5,4); retain x-lock
+  ```
+
+  但是，如果`WHERE`条件包含索引列并`InnoDB`使用索引，则在获取和保留记录锁时仅考虑索引列。在下面的示例中，第一个 [`UPDATE`](https://dev.mysql.com/doc/refman/8.0/en/update.html)采用并保留每行上的x锁定，其中b = 2.第二个[`UPDATE`](https://dev.mysql.com/doc/refman/8.0/en/update.html)阻止它尝试获取相同记录上的x锁定，因为它还使用列b上定义的索引。
+
+  ```sql
+  CREATE TABLE t (a INT NOT NULL, b INT, c INT, INDEX (b)) ENGINE = InnoDB;
+  INSERT INTO t VALUES (1,2,3),(2,2,4);
+  COMMIT;
+  
+  # Session A
+  START TRANSACTION;
+  UPDATE t SET b = 3 WHERE b = 2 AND c = 3;
+  
+  # Session B
+  UPDATE t SET b = 4 WHERE b = 2 AND c = 4;
+  ```
+
+  使用`READ COMMITTED` 隔离级别的效果与启用已弃用的 [`innodb_locks_unsafe_for_binlog`](https://dev.mysql.com/doc/refman/5.7/en/innodb-parameters.html#sysvar_innodb_locks_unsafe_for_binlog) 配置选项相同，但有以下例外：
+
+  - 启用 [`innodb_locks_unsafe_for_binlog`](https://dev.mysql.com/doc/refman/5.7/en/innodb-parameters.html#sysvar_innodb_locks_unsafe_for_binlog) 是全局设置并影响所有会话，而隔离级别可以为所有会话全局设置，也可以为每个会话单独设置。
+  - [`innodb_locks_unsafe_for_binlog`](https://dev.mysql.com/doc/refman/5.7/en/innodb-parameters.html#sysvar_innodb_locks_unsafe_for_binlog) 只能在服务器启动时设置，而隔离级别可以在启动时设置或在运行时更改。
+
+  `READ COMMITTED`因此提供更精细和更灵活的控制 [`innodb_locks_unsafe_for_binlog`](https://dev.mysql.com/doc/refman/5.7/en/innodb-parameters.html#sysvar_innodb_locks_unsafe_for_binlog)。
+
+- `READ UNCOMMITTED`
+
+  [`SELECT`](https://dev.mysql.com/doc/refman/8.0/en/select.html)语句以非锁定方式执行，但可能使用行的早期版本。因此，使用此隔离级别，此类读取不一致。这也称为 [脏读](https://dev.mysql.com/doc/refman/8.0/en/glossary.html#glos_dirty_read)。否则，这个隔离级别就像 [`READ COMMITTED`](https://dev.mysql.com/doc/refman/8.0/en/innodb-transaction-isolation-levels.html#isolevel_read-committed)。
+
+- `SERIALIZABLE`
+
+  此级别类似[`REPEATABLE READ`](https://dev.mysql.com/doc/refman/8.0/en/innodb-transaction-isolation-levels.html#isolevel_repeatable-read)，但`InnoDB`隐式将所有普通[`SELECT`](https://dev.mysql.com/doc/refman/8.0/en/select.html) 语句转换为[`SELECT ... FOR SHARE`](https://dev.mysql.com/doc/refman/8.0/en/select.html)如果 [`autocommit`](https://dev.mysql.com/doc/refman/8.0/en/server-system-variables.html#sysvar_autocommit)被禁用。如果 [`autocommit`](https://dev.mysql.com/doc/refman/8.0/en/server-system-variables.html#sysvar_autocommit)启用，则 [`SELECT`](https://dev.mysql.com/doc/refman/8.0/en/select.html)是它自己的事务。因此，已知它是只读的，并且如果作为一致（非锁定）读取执行则可以序列化，并且不需要阻止其他事务。（[`SELECT`](https://dev.mysql.com/doc/refman/8.0/en/select.html)如果其他事务已修改所选行，则强制平面 阻止，禁用[`autocommit`](https://dev.mysql.com/doc/refman/8.0/en/server-system-variables.html#sysvar_autocommit)。）
