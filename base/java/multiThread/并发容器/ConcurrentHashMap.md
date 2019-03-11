@@ -333,7 +333,7 @@ private final Node<K,V>[] initTable() {
 
 initTable方法也有一个自旋，首先判断sizeCtl的值，如果sizeCtl的值小于0，则说明bins数组正在被别的线程初始化或者调整大小，此时当前线程应该做的就是让出CPU，让其他线程完成初始化操作。如果sizeCtl大于0，说明目前还没有别的线程，真正进入到初始化的真正步骤当中，此时应该要做的就是将sizeCtl的值先保存到变量`sr` 然后将其CAS为`-1`，`-1`代表bins数组正在被初始化或者被调整大小。sr则被用于初始化bins数组`table`的大小，在这里ConcurrentHashMap与HashMap的第一点不同：**他们两个的初始化都是懒加载，但是HashMap的table初始值保存在ThresHold中，而ConcurrnetHashMap则被保存在sizeCtl中。**
 
-接着执行初始化table的逻辑，如果 sc > 0 则将sc设置为初始的数组长度，如果使用的是无参的构造方法，那么sizeCtl就是默认的0值，使用`DEFAULT_CAPACITY`也就是16作为table的初始长度。在初始化完成后还要讲sizeCtl的值设置为 `n - (n >>> 2)`（n代表新数组长度,`>>>`代表无符号右移，n >>> m 相当于 n / pow(2,m)），默认情况下sizeCtl的新值为12。最后返回新table。
+接着执行初始化table的逻辑，如果 sc > 0 则将sc设置为初始的数组长度，如果使用的是无参的构造方法，那么sizeCtl就是默认的0值，使用`DEFAULT_CAPACITY`也就是16作为table的初始长度。在初始化完成后还要讲sizeCtl的值设置为 `n - (n >>> 2)`（此时代表扩容阈值，n代表新数组长度,`>>>`代表无符号右移，n >>> m 相当于 n / pow(2,m)），默认情况下sizeCtl的新值为12。最后返回新table。
 
 在初始话完成后进行一次自旋，下一次就会进入其他判断逻辑，首先通过Unsafe类获在table上`(n - 1) & hash`（除留取余法，与`%`相同）索引处为null的时候设置新的bin，如果如果成功,则将put成功，跳出自旋。注意在table上bin为null的时候put，是不需要锁的。
 
@@ -363,9 +363,9 @@ final Node<K,V>[] helpTransfer(Node<K,V>[] tab, Node<K,V> f) {
 
 helpTransfer参数是table与正在转移的bin节点。当条件满足的时候当前线程会帮助resize线程进行transfer操作。
 
-如果当前节点没有在transfer状态，则会继续判断`onlyIfAbsent`是否为ture。这个参数在putIfAbsent方法中才会为true，如果在Map中已经存在key并且value不为null，则会直接返回value值，而不执行插入操作。
+如果当前节点没有在 transfer 状态，则会继续判断`onlyIfAbsent`是否为ture。这个参数在putIfAbsent方法中才会为true，如果在Map中已经存在key并且value不为null，则会直接返回value值，而不执行插入操作。
 
-如果onlyIfAbsent为fasle，则证明当前table上的bin不为null,此时插入操作，应该向以bin为头结点的链表上执行插入操作。首先使用Synchronized代码块锁住table上的bin，也就是锁住链表的头结点。在锁住bin后还需要重新判断当前位置的bin有没有变化而且bin的hash值 > 0（bin不是特殊节点）。真正的插入操作还是在一个自旋中进行的并且使用binCount字段计数当亲链表的长度，当超过一定的阈值后会在插入成功后将链表转化成树。
+如果onlyIfAbsent为fasle，则证明当前table上的bin不为null,此时插入操作，应该向以bin为头结点的链表上执行插入操作。首先使用Synchronized代码块锁住table上的bin，也就是锁住链表的头结点。在锁住bin后还需要重新判断当前位置的bin有没有变化而且bin的hash值 > 0（bin不是特殊节点）。真正的插入操作还是在一个自旋中进行的并且使用binCount字段计数当前链表的长度，当超过一定的阈值后会在插入成功后将链表转化成树。
 
 插入操作一共有三种情况，向链表中插入、向树中插入、bin节点是ReservationNode（computeIfAbsent和compute中使用的占位符节点）
 
@@ -390,7 +390,7 @@ helpTransfer参数是table与正在转移的bin节点。当条件满足的时候
 
    当节点的hash值相等并且key值也相等的时候，会判断是否是`putIfAbsent`方法，如果onlyIfAbsent为false，则直接替换节点value值并跳出返回。如果遍历到链表末尾，e为null的时候说明bin的链表中没有插入的key值，应该新建一个节点并且插入到链表末尾。
 
-2.  第二种遇到树的情况，在调用`TreeBin.putTreeVal`进行树的插入操作后如果新插入节点则返回空值，如果树种已经有与key相同的节点，则返回该节点并在onlyIfAbsent为false的时候进行替换。
+2. 第二种遇到树的情况，在调用`TreeBin.putTreeVal`进行树的插入操作后如果新插入节点则返回空值，如果树种已经有与key相同的节点，则返回该节点并在onlyIfAbsent为false的时候进行替换。
 
    ```java
    else if (f instanceof TreeBin) {
@@ -919,7 +919,7 @@ get操作是幂等性操作，不会改变table结构，并且得益于TreeNode�
 |                使用加载因子作为控制扩容的工具                | 加载因子只会在构造方法中为初始table容量使用过一次，每次扩容过后都会将下一次的扩容阈值设置在sizeCtl字段中 |
 |              threshold由加载因子和table长度决定              | 没有threshold字段，类似的功能有sizeCtl代替，并且sizeCtl在扩容后是固定的被设置为原table长度的1.5倍 |
 |                由于不考虑多线程，没有特殊节点                | 由于是并发容器，有三个特殊的节点（hash值为负值）TreeBin，ForwardingNode和ReservationNode，帮助线程解决并发问题。 |
-| 为单线程设计，扩容逻辑没有ConcurrentHashMap复杂，单线程情况下性能也更好。 | 在扩容的时候，不进逻辑比HashMap更加复杂，并且还会保守的在transfer过后重进检查以确定是否全不transfer完毕。只在单线程的情况下，性能比HashMap相差较大，但是可以有其他线程帮助transfer。 |
+| 为单线程设计，扩容逻辑没有ConcurrentHashMap复杂，单线程情况下性能也更好。 | 在扩容的时候，不进逻辑比HashMap更加复杂，并且还会保守的在transfer过后重进检查以确定是否全部transfer完毕。只在单线程的情况下，性能比HashMap相差较大，但是可以有其他线程帮助transfer。 |
 |                    TreeNode直接作为根节点                    | 在链表点转换成树的时候需要有一个TreeBin节点作为索引上的节点，进行同步控制而不是TreeNode直接作为根节点 |
 |                    扩容的过程为 transfer                     |                     扩容的过程为 resize                      |
 
