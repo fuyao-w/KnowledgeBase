@@ -1262,7 +1262,7 @@ private void processDispatchResult(HttpServletRequest request, HttpServletRespon
 
 `render` 对视图进行渲染。`processHandlerException ` 处理异常。
 
-最后由tomcat 返回，
+最后由tomcat 返回。
 
 
 

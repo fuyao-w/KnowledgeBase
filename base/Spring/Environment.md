@@ -21,9 +21,9 @@ properties 在几乎所有应用程序中都发挥着重要作用，可能源自
 表示 name/value 属性对的源的抽象基类。底层源对象可以是封装属性的任何类型T。示例包括Properties对象，Map对象，ServletContext 和 ServletConfig 对象（用于访问init参数）。探索PropertySource类型层次结构以查看提供的实现。
 PropertySource 对象通常不是孤立使用的，而是通过 PropertySources 对象使用，该对象聚合属性源并与 PropertyResolver 实现结合使用，PropertyResolver实现可以跨PropertySource集执行基于优先级的搜索。
 
-PropertySource标识不是基于封装属性的内容确定的，而是基于PropertySource的名称。这对于在集合上下文中操作PropertySource对象很有用。有关详细信息，请参阅MutablePropertySources中的操作以及`named（String）`和`toString（）`方法。
+PropertySource标识不是基于封装属性的内容确定的，而是基于PropertySource的名称。这对于在集合上下文中操作PropertySource对象很有用。有关详细信息，请参阅MutablePropertySources 中的操作以及`named（String）`和`toString（）`方法。
 
-请注意，在使用 @Configuration 类时，@PropertyTource 注解提供了一种方便的声明式方法，可以将属性源添加到封闭环境中。
+请注意，在使用 @Configuration 类时，@PropertySource 注解提供了一种方便的声明式方法，可以将属性源添加到封闭环境中。
 
 通过 PropertySource 可以从不同的源（比如 Map 集合，系统变量）中获取属性，或者获取属性源。它是一个泛型类，参数类型为不同的源的类型。
 

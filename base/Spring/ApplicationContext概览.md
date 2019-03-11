@@ -4,7 +4,7 @@ ApplicationContext:用于为应用程序提供配置的中央接口。 这在应
 
 ApplicationContext提供：
 
-- Bean工厂方法，用于访问应用程序组件 继承自ListableBeanFactory。
+- Bean工厂方法，用于访问应用程序组件继承自ListableBeanFactory。
 - 以通用方式加载文件资源的能力。 继承自ResourceLoader接口。
 - 将事件发布到已注册的侦听器的功能。 继承自ApplicationEventPublisher接口。
 - 解决消息，支持国际化的能力。 继承自MessageSource接口。

@@ -199,7 +199,7 @@ BeanFactoryPostProcessor实现，允许方便地注册自定义属性编辑器�
  </bean>
 ```
 
-请注意，您不应该通过customEditors属性注册PropertyEditor bean实例，因为PropertyEditors是有状态的，然后必须为每次编辑尝试同步实例。 如果您需要控制PropertyEditors的实例化过程，请使用PropertyEditorRegistrar注册它们。
+请注意，您不应该通过customEditors 属性注册PropertyEditor bean实例，因为PropertyEditors是有状态的，然后必须为每次编辑尝试同步实例。 如果您需要控制PropertyEditors的实例化过程，请使用PropertyEditorRegistrar注册它们。
 
 还支持“java.lang.String []” - 样式数组类名和基本类名（例如“boolean”）。 代表ClassUtils进行实际的类名解析。
 
