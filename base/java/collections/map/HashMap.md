@@ -437,7 +437,11 @@ final Node<K,V> getNode(int hash, Object key) {
 
 对于`get()`需要了解的是，必须是key的hash值相等，并且调用`equals`方法也返回true的时候才能证明这就是需要的key。
 
+### HashMap 实现了哪些Object 的方法
 
+clone、equals、hashCode、toString
+
+只有clone 需要自己部分重写，剩下三个继承`AbsMap`。
 
 ## 总结 ## 
 
@@ -445,4 +449,3 @@ HashMap的实现逻辑较为简单，但是有一个问题需要考虑，**这�
 还有一个问题，是为什么数组的容量必须为2的次幂呢？回顾`putVal()`在定位新元素位置是怎么做的，
 `(n- 1) & hash`它就相当于取模操作，但是当n为奇数的时候不能正确的获得与取模操作一样的结果。
 所以，要让数组的容量为2的次幂。最后留意一下现在插入链表的方式是尾部插入。
-

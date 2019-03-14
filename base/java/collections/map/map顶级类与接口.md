@@ -91,8 +91,6 @@ default V compute(K key,
 
 ### java doc ###
 
-
-
 此类提供Map接口的骨干实现，以最大限度地减少实现此接口所需的工作量。
 要实现不可修改的映射，程序员只需要扩展此类并为·entrySet·方法提供实现，该方法返回映射映射的set-view。通常，返回的集合将依次在AbstractSet上实现。此set不应支持add或remove方法，并且其迭代器不应支持remove方法。
 
@@ -106,7 +104,114 @@ default V compute(K key,
 
 AbstractMap的方法实现都是基于迭代器，迭代器需要子类来实现。
 
+需要注意的是 HashMap 实现了 Object 的四个方法，`hashCode`、`equals`、`toString`、`clone`，所有的子类不需要重写前三个方法。只需要根据需要实现`clone`方法。但是如果有子类没有实现 `Cloneable` 接口，则不可以使用`clone`方法（比如ConcurrentHashMap）。
 
+#### clone
+
+```java
+protected Object clone() throws CloneNotSupportedException {
+    AbstractMap<?,?> result = (AbstractMap<?,?>)super.clone();
+    result.keySet = null;
+    result.values = null;
+    return result;
+}
+```
+
+下面是hashMap 的重写方法。
+
+```java
+@Override
+public Object clone() {
+    HashMap<K,V> result;
+    try {
+        result = (HashMap<K,V>)super.clone();
+    } catch (CloneNotSupportedException e) {
+        // this shouldn't happen, since we are Cloneable
+        throw new InternalError(e);
+    }
+    result.reinitialize();
+    result.putMapEntries(this, false);
+    return result;
+}
+```
+
+调用AbsMap 的`clone` 后，在自己赋值。
+
+#### equals
+
+```java
+public boolean equals(Object o) {
+    if (o == this)
+        return true;
+
+    if (!(o instanceof Map))
+        return false;
+    Map<?,?> m = (Map<?,?>) o;
+    if (m.size() != size())
+        return false;
+
+    try {
+        for (Entry<K, V> e : entrySet()) {
+            K key = e.getKey();
+            V value = e.getValue();
+            if (value == null) {
+                if (!(m.get(key) == null && m.containsKey(key)))
+                    return false;
+            } else {
+                if (!value.equals(m.get(key)))
+                    return false;
+            }
+        }
+    } catch (ClassCastException unused) {
+        return false;
+    } catch (NullPointerException unused) {
+        return false;
+    }
+
+    return true;
+}
+```
+
+比较每个元素是否equals
+
+#### hashCode
+
+```java
+public int hashCode() {
+    int h = 0;
+    for (Entry<K, V> entry : entrySet())
+        h += entry.hashCode();
+    return h;
+}
+```
+
+把每个 entry 的hash 值相加。
+
+#### tostring
+
+```java
+public String toString() {
+    Iterator<Entry<K,V>> i = entrySet().iterator();
+    if (! i.hasNext())
+        return "{}";
+
+    StringBuilder sb = new StringBuilder();
+    sb.append('{');
+    for (;;) {
+        Entry<K,V> e = i.next();
+        K key = e.getKey();
+        V value = e.getValue();
+        sb.append(key   == this ? "(this Map)" : key);
+        sb.append('=');
+        sb.append(value == this ? "(this Map)" : value);
+        if (! i.hasNext())
+            return sb.append('}').toString();
+        sb.append(',').append(' ');
+    }
+}
+```
+
+展示键值对
 
 ## SortedMap ##
 
