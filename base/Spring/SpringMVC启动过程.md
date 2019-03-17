@@ -201,16 +201,16 @@ private void selfInitialize(ServletContext servletContext) throws ServletExcepti
 
 Spring MVC 接下来的行为，是将所有 controller 里面的注解 RequestMapping 的方法的映射路径进行注册。
 
-执行步骤在 refresh 的 `finishBeanFactoryInitialization`方法中。`finishBeanFactoryInitialization` 的功过是将所有为实例化的bean（非lazy init 的）。
+执行步骤在 refresh 的 `finishBeanFactoryInitialization`方法中。`finishBeanFactoryInitialization` 的功能是将所有为实例化的bean（非lazy init 的）。
 
 `finishBeanFactoryInitialization` 里面在实例化 bean 的同时，还会执行 spring 的所有回调接口，比如 `Aware接口` `beanPostProcess` 、`InitializingBean` 。
 
 ```java
-public class RequestMappingHandlerMapping extends RequestMappingHandlerMapping
-      implements MatchableHandlerMapping, EmbeddedValueResolverAware {
+public class RequestMappingHandlerMapping extends RequestMappingInfoHandlerMapping
+		implements MatchableHandlerMapping, EmbeddedValueResolverAware {
 ```
 
-` RequestMappingHandlerMapping` 就是处理 `Controller` 中注解 `RequestMapping` 方法的处理器，如果在网上查，一般会说，通过HandlerMapping 找到`handle` ，但是没说究竟`handle`是什么。接下来的步骤就是 找出这些 `handle`。`RequestMappingHandlerMapping` 继承`RequestMappingHandlerMapping`，他又继承自`AbstractHandlerMethodMapping`
+` RequestMappingHandlerMapping` 就是处理 `Controller` 中注解 `RequestMapping` 方法的处理器，如果在网上查，一般会说，通过HandlerMapping 找到`handle` ，但是没说究竟`handle`是什么。接下来的步骤就是 找出这些 `handle`。`RequestMappingHandlerMapping` 继承`RequestMappingInfoHandlerMapping`，他又继承自`AbstractHandlerMethodMapping`
 
 ```java
 public abstract class AbstractHandlerMethodMapping<T> extends AbstractHandlerMapping implements InitializingBean {
@@ -575,7 +575,7 @@ public final void init() throws ServletException {
 }
 ```
 
-首先调用`ServletConfigPropertyValues` 获得必须的（如果有）初始化参数。必须的参数在 HttpServletBeand的`requiredProperties` 集合中。可以由子类来实现在初始化的时候的注入参数的功能。默认没有。`initServletBean`也是由子类实现的初始化逻辑。
+首先调用`ServletConfigPropertyValues` 获得必须的（如果有）初始化参数。必须的参数在 HttpServletBeans的`requiredProperties` 集合中。可以由子类来实现在初始化的时候的注入参数的功能。默认没有。`initServletBean`也是由子类实现的初始化逻辑。
 
 ```java
 protected final void initServletBean() throws ServletException {
@@ -1260,7 +1260,7 @@ private void processDispatchResult(HttpServletRequest request, HttpServletRespon
 }
 ```
 
-`render` 对视图进行渲染。`processHandlerException ` 处理异常。
+​	`render` 对视图进行渲染。`	处理异常。
 
 最后由tomcat 返回。
 

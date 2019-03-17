@@ -73,7 +73,7 @@ public class SpringFactory implements FactoryBean<SpringBean> {
 ##### xml 配置：
 
 ```xml
-<bean class="spring.SpringFactory" id="springFactory" name="springFactory2" >
+<bean class="spring.SpringFactory" id="springFactory"  >
     <description>测试spring bean 工厂</description>
 </bean>
 ```
@@ -82,7 +82,7 @@ public class SpringFactory implements FactoryBean<SpringBean> {
 
 ```java
 ClassPathXmlApplicationContext applicationContext = new ClassPathXmlApplicationContext("ApplicationContext.xml");
-Object springBean =  applicationContext.getBean("&springFactory");
+SpringFactory springBean =  (SpringFactory)applicationContext.getBean("&springFactory");
 ```
 
 如果springFactory前面加上“&”，则获取到的是 SpringFactory 类的实例，而非通过其`getObject()`方法获取的 bean 实例。
