@@ -187,5 +187,5 @@ private void deleteEntry(Entry<K,V> p) {
 
 ### 总结
 
-TreeMap需要了解的是，如果元素没有实现`Comparable`接口，需要传递`Comparator`实现`compare`方法。还需要了解的就是红黑树的结构。至少了解红黑树的性质，和左右旋转。都是比较简单的。
+TreeMap需要了解的是，它继承Navigable 接口 navigable 接口又继承自TreeMap 接口如果元素没有实现`Comparable`接口（实现 `compareTo`），需要传递`Comparator`实现`compare`方法。还需要了解的就是红黑树的结构。至少了解红黑树的性质，和左右旋转。都是比较简单的。
 

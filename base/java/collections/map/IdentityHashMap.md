@@ -75,7 +75,7 @@ public IdentityHashMap() {
 }
 ```
 
-无参构造方法将 默认值扩大二倍，也就是 64。
+无参构造方法将默认值扩大二倍，也就是 64。
 
 ```java
 public IdentityHashMap(int expectedMaxSize) {

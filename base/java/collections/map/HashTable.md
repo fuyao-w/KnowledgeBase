@@ -5,8 +5,6 @@ public class Hashtable<K,V> extends Dictionary<K,V>
     implements Map<K,V>, Cloneable, java.io.Serializable 
 ```
 
-
-
 ### java doc
 
 该类实现了一个哈希表，它将键映射到值。任何非null对象都可以用作键或值。
