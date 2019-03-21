@@ -4,7 +4,6 @@ import java.util.Optional;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.Executor;
 import java.util.concurrent.LinkedBlockingDeque;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -16,10 +15,9 @@ import java.util.logging.Logger;
  * @date 2018/12/14
  **/
 public class SerialExecutor implements Executor {
-    private BlockingQueue<Worker> runnableQueue = new LinkedBlockingDeque<>();
-    private Worker mWorker = new Worker(null);
-    private Thread thread = new Thread(mWorker, "线程池");
+    private BlockingQueue<Runnable> runnableQueue = new LinkedBlockingDeque<>();
     private boolean flag = true;
+    private Worker worker = new Worker();
     private boolean shutDown = false;
     private AtomicInteger nullRunnableCounter = new AtomicInteger();
     private Logger logger = Logger.getLogger("自定义线程池");
@@ -29,13 +27,15 @@ public class SerialExecutor implements Executor {
     public void execute(Runnable command) {
         Optional.ofNullable(command).ifPresentOrElse(runnable -> {
             if (flag) {
+                worker.setRealTask(runnable);
                 flag = false;
-                mWorker.realTask = command;
-                thread.start();
+                worker.thread.start();
             } else {
-                runnableQueue.offer(new Worker(command));
+                runnableQueue.offer(command);
             }
         }, () -> logger.log(Level.WARNING, "有" + nullRunnableCounter.incrementAndGet() + "个空任务被提交到线程池"));
+
+
     }
 
     /**
@@ -45,19 +45,23 @@ public class SerialExecutor implements Executor {
      * @Param [worker]
      **/
     private void runWorker(Worker worker) {
-        while (worker != null || (worker = getTask()) != null) {
-            worker.realTask.run();
-            worker = null;
+        Runnable task = worker.realTask;
+        worker.realTask = null;
+        while (task != null || (task = getTask()) != null) {
+            try {
+                task.run();
+            } finally {
+                task = null;
+            }
         }
     }
 
-    private Worker getTask() {
+    private Runnable getTask() {
         for (; isWork(); ) {
             try {
                 return runnableQueue.take();
             } catch (InterruptedException e) {
                 logger.log(Level.WARNING, "任务队列被中断,终止线程执行");
-                shutDown();
             }
         }
         return null;
@@ -65,9 +69,19 @@ public class SerialExecutor implements Executor {
 
     private class Worker implements Runnable {
         Runnable realTask;
+        Thread thread = new Thread(this, "线程池");
 
-        public Worker(Runnable realTask) {
+
+        public Worker() {
+        }
+
+        public void setRealTask(Runnable realTask) {
             this.realTask = realTask;
+        }
+
+        public void selfInterrupt() {
+            Thread t = thread;
+            t.interrupt();
         }
 
         @Override
@@ -81,7 +95,9 @@ public class SerialExecutor implements Executor {
         return shutDown == false;
     }
 
+
     public void shutDown() {
+        worker.selfInterrupt();
         shutDown = true;
     }
 
