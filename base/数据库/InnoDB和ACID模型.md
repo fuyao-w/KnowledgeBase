@@ -32,7 +32,7 @@ ACID模型 的**一致性**方面主要涉及内部`InnoDB`处理以保护数据
 
   要关闭doublewrite缓冲区，请指定该选项 [`innodb_doublewrite=0`](https://dev.mysql.com/doc/refman/8.0/en/innodb-parameters.html#sysvar_innodb_doublewrite)。
 
-### 隔离
+### 隔离性
 
 ACID模型 的**隔离**方面主要涉及`InnoDB` [事务](https://dev.mysql.com/doc/refman/8.0/en/glossary.html#glos_transaction)，特别是适用于每个事务的[隔离级别](https://dev.mysql.com/doc/refman/8.0/en/glossary.html#glos_isolation_level)。相关的MySQL功能包括：
 

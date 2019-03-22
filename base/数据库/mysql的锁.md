@@ -10,7 +10,7 @@
 4. [间隙锁定](https://dev.mysql.com/doc/refman/8.0/en/innodb-locking.html#innodb-gap-locks)
 5. [next-key锁](https://dev.mysql.com/doc/refman/8.0/en/innodb-locking.html#innodb-next-key-locks)
 6. [插入意向锁](https://dev.mysql.com/doc/refman/8.0/en/innodb-locking.html#innodb-insert-intention-locks)
-7. [AUTO-INC锁定](https://dev.mysql.com/doc/refman/8.0/en/innodb-locking.html#innodb-auto-inc-locks)
+7. [AUTO-INC锁](https://dev.mysql.com/doc/refman/8.0/en/innodb-locking.html#innodb-auto-inc-locks)
 8. [空间索引的谓词锁](https://dev.mysql.com/doc/refman/8.0/en/innodb-locking.html#innodb-predicate-locks)
 
 #### 共享和独占锁

@@ -1,9 +1,5 @@
 #### 15.7.2.1事务隔离级别
 
-
-
-
-
 事务隔离是数据库处理的基础之一。隔离是I的首字母缩写 [ACID](https://dev.mysql.com/doc/refman/8.0/en/glossary.html#glos_acid) ; 隔离级别是在多个事务进行更改并同时执行查询时，对结果的性能和可靠性，一致性和可重现性进行微调的设置。
 
 `InnoDB`提供由SQL描述的所有四个事务隔离级别：1992标准： [`READ UNCOMMITTED`](https://dev.mysql.com/doc/refman/8.0/en/innodb-transaction-isolation-levels.html#isolevel_read-uncommitted)， [`READ COMMITTED`](https://dev.mysql.com/doc/refman/8.0/en/innodb-transaction-isolation-levels.html#isolevel_read-committed)， [`REPEATABLE READ`](https://dev.mysql.com/doc/refman/8.0/en/innodb-transaction-isolation-levels.html#isolevel_repeatable-read)，和 [`SERIALIZABLE`](https://dev.mysql.com/doc/refman/8.0/en/innodb-transaction-isolation-levels.html#isolevel_serializable)。`InnoDB`is 的默认隔离级别[`REPEATABLE READ`](https://dev.mysql.com/doc/refman/8.0/en/innodb-transaction-isolation-levels.html#isolevel_repeatable-read)。
@@ -129,4 +125,4 @@
 
 - `SERIALIZABLE`
 
-  此级别类似[`REPEATABLE READ`](https://dev.mysql.com/doc/refman/8.0/en/innodb-transaction-isolation-levels.html#isolevel_repeatable-read)，但`InnoDB`隐式将所有普通[`SELECT`](https://dev.mysql.com/doc/refman/8.0/en/select.html) 语句转换为[`SELECT ... FOR SHARE`](https://dev.mysql.com/doc/refman/8.0/en/select.html)如果 [`autocommit`](https://dev.mysql.com/doc/refman/8.0/en/server-system-variables.html#sysvar_autocommit)被禁用。如果 [`autocommit`](https://dev.mysql.com/doc/refman/8.0/en/server-system-variables.html#sysvar_autocommit)启用，则 [`SELECT`](https://dev.mysql.com/doc/refman/8.0/en/select.html)是它自己的事务。因此，已知它是只读的，并且如果作为一致（非锁定）读取执行则可以序列化，并且不需要阻止其他事务。（[`SELECT`](https://dev.mysql.com/doc/refman/8.0/en/select.html)如果其他事务已修改所选行，则强制平面 阻止，禁用[`autocommit`](https://dev.mysql.com/doc/refman/8.0/en/server-system-variables.html#sysvar_autocommit)。）
+  此级别类似[`REPEATABLE READ`](https://dev.mysql.com/doc/refman/8.0/en/innodb-transaction-isolation-levels.html#isolevel_repeatable-read)，但`InnoDB`隐式将所有普通[`SELECT`](https://dev.mysql.com/doc/refman/8.0/en/select.html) 语句转换为在如果 [`autocommit`](https://dev.mysql.com/doc/refman/8.0/en/server-system-variables.html#sysvar_autocommit)被禁用的情况下变为[`SELECT ... FOR SHARE`](https://dev.mysql.com/doc/refman/8.0/en/select.html)。如果 [`autocommit`](https://dev.mysql.com/doc/refman/8.0/en/server-system-variables.html#sysvar_autocommit)启用，则 [`SELECT`](https://dev.mysql.com/doc/refman/8.0/en/select.html)是它自己的事务。因此，已知它是只读的，并且如果作为一致（非锁定）读取执行则可以序列化，并且不需要阻止其他事务。（[`SELECT`](https://dev.mysql.com/doc/refman/8.0/en/select.html)如果其他事务已修改所选行，则强制平面 阻止，禁用[`autocommit`](https://dev.mysql.com/doc/refman/8.0/en/server-system-variables.html#sysvar_autocommit)。）
