@@ -122,9 +122,12 @@ maxmemory 100mb
 
 如果没有用于驱逐匹配先决条件的keys，则volatile-lru，volatile-random和volatile-ttl策略的行为类似于noeviction。
 
+LRU和最小TTL算法不是精确的算法，而是近似算法（为了节省内存），因此您可以调整它以获得速度或精度。 默认情况下，Redis将检查五个键并选择最近使用的键，您可以使用以下配置指令更改样本大小。`maxmemory-samples 5`
+默认值为5会产生足够好的结果。 10近似非常接近真实的LRU但是花费更多的CPU。 3非常快但不是很准确。
+
 ### 新的LFU模式
 
-从Redis 4.0开始，可以使用新的[最少使用的逐出模式](http://antirez.com/news/109)。在某些情况下，此模式可能更好（提供更好的命中/未命中率），因为使用LFU Redis将尝试跟踪项目的访问频率，以便很少使用的项目被驱逐，而使用的项目通常具有更高的机会留在记忆中
+从Redis 4.0开始，可以使用新的[最少使用的逐出模式](http://antirez.com/news/109)。在某些情况下，此模式可能更好（提供更好的命中/未命中率），因为使用LFU Redis将尝试跟踪项目的访问频率，以便很少使用的项目被驱逐，而使用的项目通常具有更高的机会留在内存中
 
 如果您在LRU中考虑，最近访问但实际上几乎从未请求的项目将不会过期，因此风险是驱逐将来有更高机会被请求的密钥。LFU没有这个问题，并且通常应该更好地适应不同的访问模式。
 
@@ -139,13 +142,13 @@ Redis 支持RDB 和 AOF 两种持久化机制，持久化功能有效地避免�
 
 ### RDB
 
-RBD 持久化是把当前进程数据生成快照保存到硬盘的过程，出发RDB 持久化分为手动触发和自动触发。
+RBD 持久化是把当前进程数据生成快照保存到硬盘的过程，触发RDB 持久化分为手动触发和自动触发。
 
 #### 触发机制
 
 手动触发分别对应 save 和 bgsave 命令：
 
-* save 命令：阻塞当前redis 服务器，知道 RDB 过程完成为止，对于内存比较大的实例会造成长时间阻塞，线上环境不建议使用。运行save 命令对应的 Redis 日志如下：
+* save 命令：阻塞当前redis 服务器，直到 RDB 过程完成为止，对于内存比较大的实例会造成长时间阻塞，线上环境不建议使用。运行save 命令对应的 Redis 日志如下：
 
   * DB save on disk
 
@@ -156,19 +159,19 @@ RBD 持久化是把当前进程数据生成快照保存到硬盘的过程，出�
   * RDB : 0 MB of memory used by copy-on-writs
   * Background saving terminated with success
 
-  显然 bgsave 命令是针对 save 阻塞问题做的优化。因此Redis 内部所有的设计 RDB 的操作都采用了 bgsave 方式，而save 命令已经废弃。
+  显然 bgsave 命令是针对 save 阻塞问题做的优化。因此Redis 内部所有的涉及 RDB 的操作都采用了 bgsave 方式，而save 命令已经废弃。
 
 除了执行命令手动触发之外，Redis 内部还存在自动触发 RDB 的持久化机制，例如一下场景：
 
 1. 使用 save 相关配置，如 `save m n `。表示 m 秒内数据存在 n 次修改时，自动触发 save.。
 2. 如果节点执行全量复制操作，主节点自动执行 bgsave 生成 RDB 文件并发送给从节点。
-3. 执行 debug reload 命令重新加载redis 时，也会自动触发 save 操作。
-4. 默认情况下执行shutdown 命令时，如果没有开启 AOF 持久化功能则自动执行 bgsave。
+3. 执行 debug reload 命令重新加载 redis 时，也会自动触发 save 操作。
+4. 默认情况下执行 shutdown 命令时，如果没有开启 AOF 持久化功能则自动执行 bgsave。
 
 #### 流程
 
-1. 执行 bgsave 命令，Redis 父进程判断当前是否存在执行的子进程，如RDB/AOF 子进程，如果存在则 bgsave 命令直接返回。
-2. 父进程执行 fork 操作创建子进程，fork 操作过程中父进程会阻塞，通过 info stats 命令查看 latest_fork_usec 选项，可以获取最近一个fork 操作的耗时，单位为微妙。
+1. 执行 bgsave 命令，Redis 父进程判断当前是否存在执行的子进程，如 RDB/AOF 子进程，如果存在则 bgsave 命令直接返回。
+2. 父进程执行 fork 操作创建子进程，fork 操作过程中父进程会阻塞，通过 info stats 命令查看 latest_fork_usec 选项，可以获取最近一个fork 操作的耗时，单位为微秒。
 3. 父进程 fork 完成后，bgsave 命令返回 `Background saving statred`信息并不再阻塞父进程，可以继续响应其他命令。
 4. 子进程创建 RDB 文件，根据父进程内存生成临时快照文件，完成后对原有文件进行原子替换。执行 lastsave 命令可以获取最后一次生成 RDB 的时间，对应 info 统计的 rdb_last_save_time 选项。
 5. 进程发送信号给父进程表示完成，父进程跟新统计信息，具体见 info Persistence 下的 rdb_*  相关选项。
@@ -205,7 +208,7 @@ AOF（append only file）持久化：以独立日志的方式每次记录写命�
 
 #### 使用AOF
 
-开启 AOF 功能需要设置配置：appendonly yes ，默认不开启。AOF 文件名通过 appendfilename 配置设置，默认文件名是appendonly.aof 。保存路径同 RDB 持久化方式一致，通过 dir 配置指定。AOF 的工作流程操作：命令写入（append）、文件同步（sync）、文件重写（rewrite）、重启加载（load）。
+开启 AOF 功能需要设置配置：`appendonly yes`，默认不开启。AOF 文件名通过 `appendfilename` 配置设置，默认文件名是`appendonly.aof `。保存路径同 RDB 持久化方式一致，通过 dir 配置指定。AOF 的工作流程操作：命令写入（append）、文件同步（sync）、文件重写（rewrite）、重启加载（load）。
 
 流程：
 
@@ -216,7 +219,7 @@ AOF（append only file）持久化：以独立日志的方式每次记录写命�
 
 #### 命令写入
 
-AOF 命令写入的内容直接是文本协议格式。例如 set hello world 命令，在 AOF 缓冲区回会追加如下文本：
+AOF 命令写入的内容直接是文本协议格式。例如 set hello world 命令，在 AOF 缓冲区会会追加如下文本：
 
 > 3\r\n$3\r\nest\r\n$5\nhello\r\n$5\r\nworld\r\n
 
@@ -228,12 +231,12 @@ AOF 命令写入的内容直接是文本协议格式。例如 set hello world �
    * 开启 AOF 后，所有写入命令都包含追加操作，直接采用协议格式，避免了二次处理的开销。
    * 文本协议具有可读性，方便直接修改和处理。
 
-2.  AOF 为什么把命令追加到 aof_buf 中?Redis 使用单线程相应命令，如果每次AOF 文件命令都直接追加到硬盘，那么性能完全取决于当前硬盘负载。先写入缓冲区中，还有另外一个好处，Redis 可以提供多种缓冲区同步硬盘的策略，在性能和安全性方面做出平衡。
+2.  AOF 为什么把命令追加到 aof_buf 中?Redis 使用单线程响应命令，如果每次AOF 文件命令都直接追加到硬盘，那么性能完全取决于当前硬盘负载。先写入缓冲区中，还有另外一个好处，Redis 可以提供多种缓冲区同步硬盘的策略，在性能和安全性方面做出平衡。
 
 
 #### 文件同步
 
-Redis 提供了多种 AOF 缓冲区同步文件策略，由参数appendfsync 控制
+Redis 提供了多种 AOF 缓冲区同步文件策略，由参数`appendfsync` 控制
 
 |          |                                                              |
 | -------- | ------------------------------------------------------------ |
