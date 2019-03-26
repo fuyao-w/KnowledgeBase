@@ -297,9 +297,9 @@ environment 接口继承了 PropertyResolver，定义了获取 Profile 状态的
 ##### 示例：模拟系统环境以进行测试
 
 ```java
- MutablePropertySources propertySources = environment.getPropertySources();
- MockPropertySource mockEnvVars = new MockPropertySource().withProperty("xyz", "myValue");
- propertySources.replace(StandardEnvironment.SYSTEM_ENVIRONMENT_PROPERTY_SOURCE_NAME, mockEnvVars);
+MutablePropertySources propertySources =  environment.getPropertySources();
+MockPropertySource mockEnvVars = new MockPropertySource().withProperty("xyz", "myValue");
+propertySources.replace(StandardEnvironment.SYSTEM_ENVIRONMENT_PROPERTY_SOURCE_NAME, mockEnvVars);
 ```
 
 当ApplicationContext正在使用Environment时，在调用上下文的refresh（）方法之前执行任何此类PropertySource操作都很重要。 这可确保在容器引导过程中所有属性源都可用，包括属性占位符配置器使用。
@@ -308,7 +308,7 @@ environment 接口继承了 PropertyResolver，定义了获取 Profile 状态的
 
 ### AbstractEnvironment
 
-环境实现的抽象基类。支持保留的默认配置文件名称的概念，并允许通过ACTIVE_PROFILES_PROPERTY_NAME`和``DEFAULT_PROFILES_PROPERTY_NAME `属性指定活动和默认配置文件。
+环境实现的抽象基类。支持保留的默认配置文件名称的概念，并允许通过`ACTIVE_PROFILES_PROPERTY_NAME`和`DEFAULT_PROFILES_PROPERTY_NAME `属性指定活动和默认配置文件。
 
 具体的子类主要区别在于它们默认添加的 PropertySource 对象。 AbstractEnvironment 没有添加任何内容。 子类应通过受保护的 `customizePropertySources（MutablePropertySources）`钩子提供属性源，而客户端应使用`ConfigurableEnvironment.getPropertySources（）`进行自定义并对MutablePropertySources API 进行操作。 有关用法示例，请参阅ConfigurableEnvironment javadoc。
 

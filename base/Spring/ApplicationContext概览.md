@@ -1,12 +1,13 @@
 Spring IOC 的核心就是 ApplicationContext，首先从它开始分析：
 
-ApplicationContext:用于为应用程序提供配置的中央接口。 这在应用程序运行时是只读的，但如果实现支持，则可以重新加载。
+ApplicationContext : 用于为应用程序提供配置的中央接口。 这在应用程序运行时是只读的，但如果实现支持，则可以重新加载。
 
-ApplicationContext提供：
+ApplicationContext 提供：
 
 - Bean工厂方法，用于访问应用程序组件继承自ListableBeanFactory。
 - 以通用方式加载文件资源的能力。 继承自ResourceLoader接口。
 - 将事件发布到已注册的侦听器的功能。 继承自ApplicationEventPublisher接口。
+- environment property 与 profile
 - 解决消息，支持国际化的能力。 继承自MessageSource接口。
 - 从父上下文继承。 后代上下文中的定义始终优先。 这意味着，例如，整个Web应用程序可以使用单个父上下文，而每个servlet都有自己的子上下文，该上下文独立于任何其他servlet的子上下文。
 
