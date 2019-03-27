@@ -27,7 +27,7 @@ List list = Collections.synchronizedList（new ArrayList（...））;
 因此，**在并发修改的情况下，迭代器快速而干净地失败**，而不是在未来的未确定时间冒任意，非确定性行为的风险。
 
 **请注意，迭代器的快速失败行为无法得到保证，因为一般来说，在存在不同步的并发修改时，不可能做出任何硬性保证。**
-失败快速迭代器会尽最大努力抛出ConcurrentModificationException。因此，编写依赖于此异常的程序以确保其正确性是错误的：
+失败快速迭代器会尽最大努力抛出 ConcurrentModificationException 。因此，编写依赖于此异常的程序以确保其正确性是错误的：
 迭代器的快速失败行为应该仅用于检测错误。
 
 
@@ -243,7 +243,7 @@ public void remove() {
 }
 ```
 
-对于迭代器的 remove 方法，会调用外部 remove，来删除元素，但是会将新的 modeCount 重新赋值给 excetedModCount。所以程序fast-fail，抛出异常。现在看**在通过迭代器以外修改list 的结构的时候，程序会fast-fail**。
+对于迭代器的 remove 方法，会调用外部 remove，来删除元素，但是会将新的 modeCount 重新赋值给 excetedModCount。所以程序不会因为fast-fail 而抛出异常。现在看**在通过迭代器以外修改list 的结构的时候，程序会fast-fail**。
 
 下面再看一下另一个例子：
 
@@ -274,7 +274,7 @@ public void remove() {
 
 ### 其他实现接口 ###
 最后看一次下这个类实现的一些其他接口里有什么需要注意的：`List`, `RandomAccess`,`Cloneable`,`Serializable`
-前两个之前都介绍过了，后面的 [`Cloneable`] [clonable]代表着这个List可以实现克隆的功能，看一下他是怎么实现的：
+前两个之前都介绍过了，后面的 [`Cloneable`][clonable]代表着这个List可以实现克隆的功能，看一下他是怎么实现的：
 
 ```java
     public Object clone() {

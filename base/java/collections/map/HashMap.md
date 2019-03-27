@@ -373,7 +373,7 @@ for (int j = 0; j < oldCap; ++j) {
 1. 只有一个节点,会被重新hash（e.hash & (newCap - 1)）,新位置有两种情况，hash到原位置，2次幂的偏移量hash到新的位置。
 
 2. 链表：当索引位置是链表的时候。分为量种情况：
-   1. 元素在与 oldCapacity 进行 hash后的索引位置为0，这种情况出现于 `（key.hashCode=oldCap）* n（n >= 2） & oldCap`这种情况，会被重新分配在新数组相对于旧数组相同的位置上。
+   1. 元素在与 oldCapacity 进行 hash后的索引位置为0(tab 长度为2的次幂，二进制只有一位是 1)，这种情况出现于 `（key.hashCode=oldCap）* n（n >= 2） & oldCap`这种情况，会被重新分配在新数组相对于旧数组相同的位置上。
    2. 元素在旧数组上索引位置不为0，会被重新分配在旧数组位置+oldCap的新位置。
       1. 原来在hash在0索引位置的Node的key值，被修改后重新hash不在0索引位置，和原来hash不在0索引位置的Node重新hash后在0索引位置。
 
@@ -435,7 +435,7 @@ final Node<K,V> getNode(int hash, Object key) {
 }
 ```
 
-对于`get()`需要了解的是，必须是key的hash值相等，并且调用`equals`方法也返回true的时候才能证明这就是需要的key。
+对于`get()`需要了解的是，必须是key的hash值相等，并且key 的引用相等，或者key 不为空的情况下。调用`equals`方法也返回true的时候才能证明这就是需要的key。
 
 ### HashMap 实现了哪些Object 的方法
 

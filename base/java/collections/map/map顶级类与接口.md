@@ -73,21 +73,25 @@ default V compute(K key,
 
 该方法将`value`重新映射成新值，但是不保证快速失败，也不保证原子性与同步性，需要由子类重写，实例：
 
-        var map = new HashMap<String, String>();
-        map.put("test", "testOne");
-    
-        map.computeIfAbsent("core", (v) -> {
-    
-            return v.concat("新值");
-        });
-        map.compute("扶摇", (k, v) -> {
-            System.out.println(k.concat("被修改"));
-            return "新值：".concat(v);
-        });
+```java
+    var map = new HashMap<String, String>();
+    map.put("test", "testOne");
+
+    map.computeIfAbsent("core", (v) -> {
+
+        return v.concat("新值");
+    });
+    map.compute("扶摇", (k, v) -> {
+        System.out.println(k.concat("被修改"));
+        return "新值：".concat(v);
+    });
+```
 
 ## AbstractMap ##
 
-    public abstract class AbstractMap<K,V> implements Map<K,V>
+```java
+public abstract class AbstractMap<K,V> implements Map<K,V>
+```
 
 ### java doc ###
 

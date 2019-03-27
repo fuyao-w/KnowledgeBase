@@ -108,17 +108,19 @@ public PriorityQueue(SortedSet<? extends E> c) {
 
 看一下`offer()`方法
 
-    public boolean offer(E e) {
-        if (e == null)
-            throw new NullPointerException();
-        modCount++;
-        int i = size;
-        if (i >= queue.length)
-            grow(i + 1);
-        siftUp(i, e);
-        size = i + 1;
-        return true;
-    }
+```java
+public boolean offer(E e) {
+    if (e == null)
+        throw new NullPointerException();
+    modCount++;
+    int i = size;
+    if (i >= queue.length)
+        grow(i + 1);
+    siftUp(i, e);
+    size = i + 1;
+    return true;
+}
+```
 
 `offer()`方法会先判断并调用`grow()`扩容，然后调用`siftUp()`方法进行。
 

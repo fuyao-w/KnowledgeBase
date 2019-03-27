@@ -157,5 +157,5 @@ void afterNodeAccess(Node<K,V> e) { // move node to last
 
 ## 总结
 
-LinkedHashMap是有序的Map，可以通过`accessOrder`字段，控制其按访问顺序迭代还是按插入顺序迭代。可以通过继承它重写 `removeEldestElement`实现一个最近最少使用的缓存（LRU）。此类不支持克隆和序列化。
+LinkedHashMap是有序的Map，可以通过`accessOrder`字段，控制其按访问顺序迭代还是按插入顺序迭代。可以通过继承它重写 `removeEldestEntry`实现一个最近最少使用的缓存（LRU）。此类不支持克隆和序列化。
 

@@ -1,7 +1,7 @@
 ## Vector ##
 
 ```java
-extends AbstractList<E> implements List<E>, RandomAccess, Cloneable, java.io.Serializable
+public class Vector<E> extends AbstractList<E> implements List<E>, RandomAccess, Cloneable, java.io.Serializable
 ```
 
 ### java doc ###
@@ -100,5 +100,4 @@ Deque<Integer> stack = new ArrayDeque<Integer>();
 
 ### 分析 ###
 
-Stack是一个继承Vector来是实现的栈结构。方法很少不算构造方法只有5个，需要注意的是其中`pop`,
-`peek`方法是由synchronized 修饰的。
+Stack是一个继承Vector来是实现的栈结构。方法很少不算构造方法只有5个，需要注意的是其中`pop`,`peek`方法是由 synchronized 修饰的。
