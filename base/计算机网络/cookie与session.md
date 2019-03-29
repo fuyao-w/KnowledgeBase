@@ -72,7 +72,7 @@ Cookie另一个典型的应用是当登录一个网站时，网站往往会请�
 
 （1）简介
 
-Session代表服务器与浏览器的一次会话过程，这个过程是连续的，也可以时断时续的。Session是一种服务器端的机制，Session 对象用来存储特定用户会话所需的信息。
+Session 代表服务器与浏览器的一次会话过程，这个过程是连续的，也可以时断时续的。Session 是一种服务器端的机制，Session 对象用来存储特定用户会话所需的信息。
 
 Session由服务端生成，保存在服务器的内存、缓存、硬盘或数据库中。
 
@@ -115,7 +115,7 @@ Cookie保存在客户端，Session保存在服务端。
 
 2 、存取方式的不同
 
- Cookie中只能保管ASCII字符串，假如需求存取Unicode字符或者二进制数据，需求先进行编码。Cookie中也不能直接存取Java对象。若要存储略微复杂的信息，运用Cookie是比拟艰难的。 
+ Cookie中只能保管ASCII字符串，假如需求存取Unicode字符或者二进制数据，需求先进行编码。Cookie中也不能直接存取Java对象。若要存储略微复杂的信息，运用Cookie是比较艰难的。 
 
 而Session中能够存取任何类型的数据，包括而不限于String、Integer、List、Map等。Session中也能够直接保管Java Bean乃至任何Java类，对象等，运用起来十分便当。能够把Session看做是一个Java容器类。 
 
