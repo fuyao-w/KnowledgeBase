@@ -82,6 +82,7 @@
 5. Sort Set
 6. Bitmaps
 7. HyperLogLogs
+8. Streams(5.0 之后提供)
 
 ## 使用Redis作为LRU缓存 
 
