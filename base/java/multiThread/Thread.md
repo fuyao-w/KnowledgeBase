@@ -260,8 +260,6 @@ public synchronized void start() {
 
 启动线程的方法是一个同步方法。同一个线程不能被启动两次，然后调用native方法启动线程。
 
-
-
 ```java
 private void exit() {
     if (threadLocals != null && TerminatingThreadLocal.REGISTRY.isPresent()) {
