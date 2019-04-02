@@ -52,6 +52,34 @@ public Hashtable() {
 ```
 
 ```java
+public synchronized V put(K key, V value) {
+    // Make sure the value is not null
+    if (value == null) {
+        throw new NullPointerException();
+    }
+
+    // Makes sure the key is not already in the hashtable.
+    Entry<?,?> tab[] = table;
+    int hash = key.hashCode();
+    int index = (hash & 0x7FFFFFFF) % tab.length;
+    @SuppressWarnings("unchecked")
+    Entry<K,V> entry = (Entry<K,V>)tab[index];
+    for(; entry != null ; entry = entry.next) {
+        if ((entry.hash == hash) && entry.key.equals(key)) {
+            V old = entry.value;
+            entry.value = value;
+            return old;
+        }
+    }
+
+    addEntry(hash, key, value, index);
+    return null;
+}
+```
+
+使用线程探测再散列的方法解决Hash 冲突。
+
+```java
 protected void rehash() {
     int oldCapacity = table.length;
     Entry<?,?>[] oldMap = table;
@@ -69,5 +97,5 @@ protected void rehash() {
 }
 ```
 
-HashTable是已经不被推荐使用的类，与HashMap类似。继承`Dictionary`类，而不是`AbsTractMap`类。关键方法都用`Synchronized`关键字修饰。与`Vector`一样。默认初始容量为11,扩容方式为`旧值*2+1`。
+HashTable是已经不被推荐使用的类，与HashMap类似。但是解决Hash 冲突的方法不同。继承`Dictionary`类，而不是`AbsTractMap`类。关键方法都用`Synchronized`关键字修饰。与`Vector`一样。默认初始容量为11,扩容方式为`旧值*2+1`。
 
