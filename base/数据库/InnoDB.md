@@ -30,10 +30,6 @@
 | **交易**                                                     | 是                                                           |
 | **更新数据字典的统计信息**                                   | 是                                                           |
 
-| 特征 | 支持 |
-| ---- | ---- |
-|      |      |
-
 要比较`InnoDB`MySQL提供的其他存储引擎的功能，请参阅[第16章](https://dev.mysql.com/doc/refman/8.0/en/storage-engines.html)[*备用存储引擎中*](https://dev.mysql.com/doc/refman/8.0/en/storage-engines.html)的*存储引擎功能*表 。
 
 ### 表优化
