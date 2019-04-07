@@ -1,4 +1,4 @@
-# KEYS 模式
+### KEYS 模式
 
 **自1.0.0起可用。**
 
@@ -51,7 +51,7 @@ redis>
 
 **自2.8.0起可用。**
 
-**时间复杂度：**每次通话都是O（1）。O（N）用于完整迭代，包括足够的命令调用以使光标返回0. N是集合内元素的数量。
+**时间复杂度：**每次调用都是O（1）。O（N）用于完整迭代，包括足够的命令调用以使光标返回0。 N是集合内元素的数量。
 
 使用[SCAN](https://redis.io/commands/scan)命令和密切相关的命令[SSCAN](https://redis.io/commands/sscan)，[HSCAN](https://redis.io/commands/hscan)和[ZSCAN](https://redis.io/commands/zscan)以便递增地迭代元素集合。
 
@@ -64,7 +64,7 @@ redis>
 
 但是，虽然像[SMEMBERS](https://redis.io/commands/smembers)这样的阻塞命令能够在给定时刻提供属于Set的所有元素，但SCAN系列命令仅对返回的元素提供有限保证，因为我们递增迭代的集合可以在迭代过程中更改。
 
-请注意，[SCAN](https://redis.io/commands/scan)，[SSCAN](https://redis.io/commands/sscan)，[HSCAN](https://redis.io/commands/hscan)和[ZSCAN的](https://redis.io/commands/zscan)工作方式非常相似，因此本文档涵盖了所有四个命令。然而，一个明显的区别是，在[SSCAN](https://redis.io/commands/sscan)，[HSCAN](https://redis.io/commands/hscan)和[ZSCAN](https://redis.io/commands/zscan)的情况下，第一个参数是包含Set，Hash或Sorted Set值的键的名称。该[SCAN](https://redis.io/commands/scan)命令不需要任何按键名称参数，因为它在当前数据库中遍历键，所以迭代对象是数据库本身。
+请注意，[SCAN](https://redis.io/commands/scan)，[SSCAN](https://redis.io/commands/sscan)，[HSCAN](https://redis.io/commands/hscan)和[ZSCAN的](https://redis.io/commands/zscan)工作方式非常相似，因此本文档涵盖了所有四个命令。然而，一个明显的区别是，在[SSCAN](https://redis.io/commands/sscan)，[HSCAN](https://redis.io/commands/hscan)和[ZSCAN](https://redis.io/commands/zscan)的情况下，第一个参数是包含Set，Hash或Sorted Set值的键的名称。[SCAN](https://redis.io/commands/scan)命令不需要任何按键名称参数，因为它在当前数据库中遍历键，所以迭代对象是数据库本身。
 
 
 
@@ -116,10 +116,10 @@ redis 127.0.0.1:6379> scan 17
 - 完整迭代始终从完整迭代的开始到结束检索集合中存在的所有元素。这意味着如果在迭代开始时给定元素在集合内部，并且在迭代终止时仍然存在，那么在某些时候[SCAN](https://redis.io/commands/scan)将其返回给用户。
 - 完整迭代永远不会返回从完整迭代的开始到结束不存在于集合中的任何元素。因此，如果在迭代开始之前删除了一个元素，并且迭代持续一直没有添加回集合，[SCAN将](https://redis.io/commands/scan)确保永远不会返回此元素。
 
-但是因为[SCAN](https://redis.io/commands/scan)几乎没有关联状态（只是光标），它有以下缺点：
+但是因为[SCAN](https://redis.io/commands/scan)几乎没有关联状态（只是游标），它有以下缺点：
 
-- 给定元素可以多次返回。由应用程序来处理重复元素的情况，例如仅使用返回的元素来执行多次重新应用时安全的操作。
-- 在完整迭代期间不会始终存在于集合中的元素可以返回或不返回：它是未定义的。
+- **给定元素可以多次返回。由应用程序来处理重复元素的情况**，例如仅使用返回的元素来执行多次重新应用时安全的操作。
+- **在完整迭代期间不会始终存在于集合中的元素可以返回或不返回**：它是未定义的。
 
 
 
