@@ -1,7 +1,5 @@
 # KnowledgeBase
 
-https://github.com/TransientWang/KnowledgeBase
-
 这个仓库里面的东西是我总结的知识库。
 
 里面的内容：
