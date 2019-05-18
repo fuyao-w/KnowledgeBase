@@ -10,7 +10,7 @@ Object里面的方法一共有**12**个，一个静态native方法`registerNativ
 创建并返回此对象的副本。 “复制”的确切含义可能取决于对象的类别。一般意图是，对于任何对象x，表达式：
 
     x.clone（）!= x(也就是说会返回一个新的对象)
-
+    
     x.clone（）。getClass（）== x.getClass（）（返回的对象应该通过调用super.clone来获得,而不是创建了另一个类型的对象返回，并非绝对要求。虽然通常情况是：）
 
 
@@ -54,7 +54,7 @@ Object类本身并不实现Cloneable接口，因此在类为Object的对象上�
 
 一个类的自我描述
 
-·equals()`
+`equals()`
 
 判断对象是否相等
 
