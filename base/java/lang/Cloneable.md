@@ -1,7 +1,7 @@
 ## Cloneable（标志类）
 
 类实现了`Cloneable`接口，以向 `Object.clone（）`方法指示该方法合法地为该类的实例制作字段的字段副本。
-在未实现Cloneable接口的实例上调用Object的clone方法会导致抛出异常CloneNotSupportedException。
+**在未实现Cloneable接口的实例上调用Object的clone方法会导致抛出异常CloneNotSupportedException。**
 
 按照惯例，实现此接口的类应使用公共方法覆盖Object.clone（受保护）。 有关重写此方法的详细信息，请参阅Object.clone（）。
 
