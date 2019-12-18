@@ -272,3 +272,9 @@ redis 127.0.0.1:6379> hscan hash 0
    3) "age"
    4) "33"
 ```
+
+## 如何通过通过通配符删除key
+
+通过linux 的管道和 xargs 来删除（ps 线上别用）
+
+redis-cli keys "a-*" | xargs redis-cli del
