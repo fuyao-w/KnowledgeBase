@@ -42,7 +42,7 @@
 
 7. ##### Golang
 
-现在使用golang 开发，会主键增加 golang 相关的知识总结。
+现在使用golang 开发，会逐渐增加 golang 相关的知识总结。
 
 
 ## 由于懒没有写目录，如果你使用 Chrome 插件 Octotree ，那就不是问题。
