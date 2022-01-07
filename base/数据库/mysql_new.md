@@ -1,3 +1,7 @@
+---
+typora-root-url: ../../picture
+---
+
 **MySQL**
 
 
@@ -484,7 +488,7 @@ select id, name from table where name='李明';
 
 1、B树，每个节点都存储key和data，所有节点组成这棵树，并且叶子节点指针为null，叶子结点不包含任何关键字信息。
 
-![data](/Users/wfy/Documents/KnowledgeBase/picture/db/data.jpg)
+![data](/db/data.jpg)
 
 2、B+树，所有的叶子结点中包含了全部关键字的信息，及指向含有这些关键字记录的指针，且叶子结点本身依关键字的大小自小而大的顺序链接
 
@@ -818,7 +822,7 @@ https://blog.csdn.net/huangjw_806/article/details/100927097
 
 其实所谓的两阶段就是把一个事物分成两个阶段（prepare commit）来提交，主要用于保持 redo log 和 binlog 的一致性。就像下图这样。
 
-![知乎 @授人以渔](/Users/wfy/Documents/KnowledgeBase/picture/db/知乎 @授人以渔.jpg)
+![知乎 @授人以渔](/db/知乎 @授人以渔.jpg)
 
 两阶段写日志用意？
 
@@ -858,7 +862,7 @@ mysql 宕机如何判断事物能回滚还是提交？
 
 只要这个XID和redolog中记录的XID是一致的，MySQL就会认为binlog和redolog逻辑上一致。就上面的场景来说就会commit，而如果仅仅是rodolog中记录了XID，binlog中没有，MySQL就会RollBack
 
-![L AnETEA COALHAA P BA CCM EOR SUALD Suai MMA Bd Laa n](/Users/wfy/Documents/KnowledgeBase/picture/db/L AnETEA COALHAA P BA CCM EOR SUALD Suai MMA Bd Laa n.jpg)
+![L AnETEA COALHAA P BA CCM EOR SUALD Suai MMA Bd Laa n](/db/L AnETEA COALHAA P BA CCM EOR SUALD Suai MMA Bd Laa n.jpg)
 
 
 

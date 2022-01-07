@@ -1,3 +1,7 @@
+---
+typora-root-url: ../../picture
+---
+
 **计算机网络**
 
 **IP:**
@@ -230,7 +234,7 @@ MSL 的单位是时间，⽽而 TTL 是经过路路由跳数。所以 MSL 应该
 
 1. 为了让旧报文段在网络上彻底消失 。防止后续收到同一个socket 失效的报文段 ，造成数据冲突(client 立即关闭连接，重新建立新连接的case ，此时服务端还没收到 ack , 就又收到了建立链接或者数据传输的包)
 
-![2022010501](/Users/wfy/Documents/KnowledgeBase/picture/network/2022010501.jpg)
+![2022010501](/network/2022010501.jpg)
 
 2. 为了保证服务端能正常关闭，如果 ack 丢失则 服务端可以从新发送一次 FIN。
 
@@ -248,7 +252,7 @@ MSL 的单位是时间，⽽而 TTL 是经过路路由跳数。所以 MSL 应该
 
 https://mp.weixin.qq.com/s/yIXihfy7lFajyeL6mXhU_Q
 
-![2022010502](/Users/wfy/Documents/KnowledgeBase/picture/network/2022010502.jpg)
+![2022010502](/network/2022010502.jpg)
 
 
 
@@ -405,10 +409,6 @@ post 不幂等 put 幂等
 
 
 PATCH 用法：通过 json-path协议，用一组操作命令部分更新资源
-
-
-
-![Pasted Graphic_1.tiff](blob:file:///3d9a30b3-28b6-49e3-8fcd-d7162ddf0a6f)
 
 
 
@@ -702,7 +702,7 @@ Content Delivery Network 内容分发网络，CDN 在不同的地方设置缓存
 
 
 
-![2022010503](/Users/wfy/Documents/KnowledgeBase/picture/network/2022010503.jpg)
+![2022010503](/network/2022010503.jpg)
 
 
 

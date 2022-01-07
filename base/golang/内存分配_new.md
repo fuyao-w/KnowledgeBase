@@ -1,3 +1,7 @@
+---
+typora-root-url: ../../picture
+---
+
 **Go**
 
 **TCmalloc**
@@ -82,7 +86,7 @@ Go 语言的调度器通过使用与 CPU 数量相等的线程减少线程频繁
 
 数据结构
 
-![GOLANG SCHEDULER](/Users/wfy/Documents/KnowledgeBase/picture/go/GOLANG SCHEDULER.png)
+![GOLANG SCHEDULER](/go/GOLANG SCHEDULER.png)
 
 
 

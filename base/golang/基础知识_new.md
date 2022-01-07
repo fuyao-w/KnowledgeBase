@@ -1,3 +1,7 @@
+---
+typora-root-url: ../../picture
+---
+
 **GO**
 
 Context 用法：
@@ -241,7 +245,7 @@ Go 语言中包含三种初始化切片的方式：
 
 一个struct 有一个 data 指针，指向底层数组，还有长度和容量两个整形值
 
-![GOLANG SLICE STRUCT](/Users/wfy/Documents/KnowledgeBase/picture/go/GOLANG SLICE STRUCT.png)
+![GOLANG SLICE STRUCT](/go/GOLANG SLICE STRUCT.png)
 
 
 
@@ -291,7 +295,7 @@ Go 语言中包含三种初始化切片的方式：
 
 
 
- ![len](/Users/wfy/Documents/KnowledgeBase/picture/go/len.png)
+ ![len](/go/len.png)
 
 len表示数组的长度，后面的int储存的是实际数据 
 
@@ -349,7 +353,7 @@ bmap 的结构分为两部分，第一个部分是一个长度为 8 类型为 ui
 
 哈希表的每个桶都只能存储 8 个键值对，一旦当前哈希的某个桶超出 8 个，新的键值对就会存储到哈希的溢出桶中。随着键值对数量的增加，溢出桶的数量和哈希的装载因子也会逐渐升高，超过一定范围就会触发扩容，扩容会将桶的数量翻倍，元素再分配的过程也是在调用写操作时增量进行的，不会造成性能的瞬时巨大抖动。
 
-![HASHMAP MAPACCESS](/Users/wfy/Documents/KnowledgeBase/picture/go/HASHMAP MAPACCESS.png)
+![HASHMAP MAPACCESS](/go/HASHMAP MAPACCESS.png)
 
 
 
