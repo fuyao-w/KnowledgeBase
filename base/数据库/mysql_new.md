@@ -919,3 +919,94 @@ https://blog.csdn.net/yangyu112654374/article/details/4251624
 
 
 是一种比较慢的外部排序，例子：select * from table where t = 1 order by id  ;  这个sql 里的 t 有索引，但是
+
+
+
+**InnoBD LRU 缓存算法**
+
+
+
+普通LRU 算法在 InnoDB 中的问题：
+
+1.在全表扫描的时候会将所有的真正热数据挤走
+
+2.预读功能也会将一部分非热数据带入缓存中
+
+
+
+解决办法：
+
+将 LRU 链表分为两部分，也就是所谓的 old 区 和 yong 区。
+
+yong区：链表的头部，存放经常被访问的数据页，可以理解为热数据
+
+old区：链表尾部，存放不经常被访问的数据页，可以理解为冷数据
+
+这两个部分的交汇处成为 midpoint 
+
+两个区域的比例 通过 innodb_old_blocks_pct 变量控制，默认为old 37% （3/8） yong 73 (5/8)
+
+
+
+控制流程：
+
+数据页第一次被加载BufferPool 时在 old 区头部。
+
+当这个数据页在 old 区再次被访问到，会做如下判断
+
+- 如果这个数据也在 LRU 链表 old 区存在的时间超过了 1 秒，就把它移动到 young 区
+- 这个存在时间由 innodb_old_blocks_time 变量控制
+
+
+
+那怎么解决这些缺点的？
+
+针对原因一
+
+也就是所谓的全表扫描导致Bufferpool中的高频数据页快速被淘汰的问题。
+
+Innodb这么做的:
+
+(1)扫描过程中，需要新插入的数据页，都被放到old区
+
+(2)一个数据页会有多条记录，因此一个数据页会被访问多次
+
+(3)由于是顺序扫描,数据页的第一次被访问和最后一次被访问的时间间隔不会超过1S，因此还是会留在old区
+
+(4)继续扫描，之前的数据页再也不会被访问到，因此也不会被移到young区，最终很快被淘汰
+
+针对原因二
+
+也就是预读到的页，可能不是高频次的页。
+
+你看，你预读到的页，是存在old区的。如果这个页后续不会被继续访问到，是会在old区逐步被淘汰的。因此不会影响young区的热数据。
+
+
+
+监控冷热数据 
+
+执行下面命令即可
+
+mysql> show engine innnodb status\G
+
+……
+
+Pages made young 0, not young 0
+
+0.00 youngs/s, 0.00 non-youngs/s
+
+1、数据页从冷到热，称为young；not young就是数据在没有成为热数据情况下就被刷走的量(累计值)。
+
+2、non-youngs/s，这个数值如果很高，一般情况下就是系统存在严重的全表扫描，自然意味着很高的物理读。(上面分析过)
+
+3、youngs/s，如果这个值相对较高，最好增加一个innodb_old_blocks_time，降低innodb_old_blocks_pct，保护热数据。
+
+
+
+
+
+**Count（\*） 和 count(1) 那个性能更高**
+
+一样高 * 会替换成 0 也就是 count(0) , 都不会扫描字段值。
+
+https://mp.weixin.qq.com/s/foPwJPS8Ek7YmR3ZgV8xMw
